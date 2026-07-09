@@ -1,6 +1,6 @@
 # rebound
 
-TUI tool to set up 0xClumzZy's Arch Linux environment on any PC.
+TUI tool to set up 0xClumzZy's Arch Linux environment on any arch based PC.
 
 ```
   ╔══════════════════════════════════════╗

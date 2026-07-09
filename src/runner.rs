@@ -51,14 +51,13 @@ impl Runner {
             format!("  {} tasks selected", tasks.len()),
             "".to_string(),
         ];
-        *self.total.lock().unwrap() = tasks.len();
         *self.current.lock().unwrap() = 0;
         *self.success.lock().unwrap() = true;
         *self.failed_tasks.lock().unwrap() = Vec::new();
 
         let output = Arc::clone(&self.output);
         let current = Arc::clone(&self.current);
-        let _total = Arc::clone(&self.total);
+        let total = Arc::clone(&self.total);
         let current_name = Arc::clone(&self.current_name);
         let success = Arc::clone(&self.success);
         let state = Arc::clone(&self.state);
@@ -75,11 +74,20 @@ impl Runner {
             })
             .collect();
 
+        // Count total commands for granular progress
+        let mut total_cmds: usize = 0;
+        for (_, commands, _, _, _) in &tasks_owned {
+            total_cmds += commands.iter().filter(|c| !c.starts_with('#')).count();
+        }
+        // Add 1 per task for file deployments
+        total_cmds += tasks_owned.len();
+        *total.lock().unwrap() = total_cmds;
+
         thread::spawn(move || {
+            let mut progress: usize = 0;
+
             for (i, (name, commands, deploy_files, has_deploy, is_wallpapers)) in tasks_owned.iter().enumerate() {
                 current_name.lock().unwrap().clone_from(name);
-                *current.lock().unwrap() = i;
-                *last_progress.lock().unwrap() = Instant::now();
 
                 {
                     let mut out = output.lock().unwrap();
@@ -100,6 +108,9 @@ impl Runner {
                             }
                         }
                     }
+                    progress += 1;
+                    *current.lock().unwrap() = progress;
+                    *last_progress.lock().unwrap() = Instant::now();
                 }
 
                 // Deploy embedded files first
@@ -122,6 +133,9 @@ impl Runner {
                             }
                         }
                     }
+                    progress += 1;
+                    *current.lock().unwrap() = progress;
+                    *last_progress.lock().unwrap() = Instant::now();
                 }
 
                 for cmd in commands {
@@ -166,10 +180,6 @@ impl Runner {
                                 for line in stderr.lines().take(3) {
                                     out.push(format!("  |  ! {}", line));
                                 }
-                                // Don't mark as failed for common non-critical errors
-                                if !stderr.contains("warning") && !stderr.contains("already") {
-                                    // Many pacman commands output warnings, that's ok
-                                }
                             }
                         }
                         Err(e) => {
@@ -179,6 +189,11 @@ impl Runner {
                             failed.lock().unwrap().push(name.clone());
                         }
                     }
+
+                    // Update progress after each command
+                    progress += 1;
+                    *current.lock().unwrap() = progress;
+                    *last_progress.lock().unwrap() = Instant::now();
                 }
 
                 {
@@ -188,7 +203,9 @@ impl Runner {
                 }
             }
 
-            *current.lock().unwrap() = tasks_owned.len();
+            // Set to 100% when done
+            let final_total = *total.lock().unwrap();
+            *current.lock().unwrap() = final_total;
             *last_progress.lock().unwrap() = Instant::now();
 
             {

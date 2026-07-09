@@ -281,7 +281,7 @@ fn centered_area(f: &Frame, h: u16, w: u16) -> Rect {
 }
 
 fn prompt_sudo_password() -> anyhow::Result<()> {
-    use std::io::BufRead;
+    use crossterm::terminal;
 
     // Check if sudo is already cached
     let check = Command::new("sudo").arg("-n").arg("true").output();
@@ -293,8 +293,35 @@ fn prompt_sudo_password() -> anyhow::Result<()> {
     eprint!("[sudo] password for user: ");
     io::stderr().flush()?;
 
-    let stdin = io::stdin();
-    let password = stdin.lock().lines().next().unwrap_or_else(|| Ok(String::new()))?;
+    // Read password with stars
+    let mut password = String::new();
+    terminal::enable_raw_mode()?;
+    loop {
+        if crossterm::event::poll(std::time::Duration::from_millis(100))? {
+            if let crossterm::event::Event::Key(key) = crossterm::event::read()? {
+                match key.code {
+                    crossterm::event::KeyCode::Enter => {
+                        eprintln!();
+                        break;
+                    }
+                    crossterm::event::KeyCode::Backspace => {
+                        if !password.is_empty() {
+                            password.pop();
+                            eprint!("\x08 \x08");
+                            io::stderr().flush()?;
+                        }
+                    }
+                    crossterm::event::KeyCode::Char(c) => {
+                        password.push(c);
+                        eprint!("*");
+                        io::stderr().flush()?;
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+    terminal::disable_raw_mode()?;
 
     // Cache the password
     let mut child = Command::new("sudo")

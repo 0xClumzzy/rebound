@@ -1,7 +1,7 @@
 use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use crate::tasks::Task;
 
@@ -21,6 +21,7 @@ pub struct Runner {
     pub success: Arc<Mutex<bool>>,
     pub tick: Arc<Mutex<u64>>,
     pub failed_tasks: Arc<Mutex<Vec<String>>>,
+    pub last_progress: Arc<Mutex<Instant>>,
 }
 
 impl Runner {
@@ -34,6 +35,7 @@ impl Runner {
             success: Arc::new(Mutex::new(true)),
             tick: Arc::new(Mutex::new(0)),
             failed_tasks: Arc::new(Mutex::new(Vec::new())),
+            last_progress: Arc::new(Mutex::new(Instant::now())),
         }
     }
 
@@ -61,6 +63,7 @@ impl Runner {
         let state = Arc::clone(&self.state);
         let _tick = Arc::clone(&self.tick);
         let failed = Arc::clone(&self.failed_tasks);
+        let last_progress = Arc::clone(&self.last_progress);
         let home = home.to_string();
 
         let tasks_owned: Vec<(String, Vec<String>, Vec<(String, String)>, bool)> = tasks
@@ -75,6 +78,7 @@ impl Runner {
             for (i, (name, commands, deploy_files, has_deploy)) in tasks_owned.iter().enumerate() {
                 current_name.lock().unwrap().clone_from(name);
                 *current.lock().unwrap() = i;
+                *last_progress.lock().unwrap() = Instant::now();
 
                 {
                     let mut out = output.lock().unwrap();
@@ -160,6 +164,7 @@ impl Runner {
             }
 
             *current.lock().unwrap() = tasks_owned.len();
+            *last_progress.lock().unwrap() = Instant::now();
 
             {
                 let mut out = output.lock().unwrap();
@@ -215,5 +220,9 @@ impl Runner {
 
     pub fn tick(&self) -> u64 {
         *self.tick.lock().unwrap()
+    }
+
+    pub fn elapsed_since_progress(&self) -> Duration {
+        self.last_progress.lock().unwrap().elapsed()
     }
 }

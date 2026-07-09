@@ -639,12 +639,22 @@ fn render_running(f: &mut Frame, app: &App) {
     let (current, total, current_name) = app.runner.progress();
     let pct = if total > 0 { current * 100 / total } else { 0 };
     let tick = app.runner.tick();
+    let elapsed = app.runner.elapsed_since_progress();
 
     let bar_w = 40;
     let filled = (pct as usize * bar_w) / 100;
 
+    // Animate the leading edge of the bar in sync with progress
+    // Pulse for 500ms after each task completes, then settle
+    let pulse_ms = elapsed.as_millis() as u64;
     let bar_chars = ["\u{258f}", "\u{258e}", "\u{258d}", "\u{258c}", "\u{258b}", "\u{258a}", "\u{2589}", "\u{2588}"];
-    let anim_idx = (tick as usize) % bar_chars.len();
+    let anim_idx = if pulse_ms < 500 {
+        // Fast pulse right after progress
+        ((pulse_ms / 60) as usize) % bar_chars.len()
+    } else {
+        // Slow idle pulse
+        ((tick / 3) as usize) % bar_chars.len()
+    };
 
     let mut bar = String::new();
     for _ in 0..filled {

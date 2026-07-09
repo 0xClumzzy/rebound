@@ -20,6 +20,11 @@ A pc booted up with Arch linux
 curl -sL https://raw.githubusercontent.com/0xClumzzy/rebound-/main/install.sh | bash
 ```
 
+OR (directly)
+```bash
+curl -sL https://github.com/0xClumzzy/rebound-/releases/download/v1.0.0/rebound-x86_64 -o ~/.local/bin/rebound && chmod +x ~/.local/bin/rebound
+```
+
 ### Manual
 
 ```bash

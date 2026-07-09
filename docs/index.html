@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rebound - Arch Linux Environment Setup</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <span class="logo-bracket">0</span><span class="logo-dim">x</span><span class="logo-block">██</span><span class="logo-bracket">╗</span>
+            </div>
+            <span class="logo-text">REBOUND</span>
+            <span class="logo-version">v1.0</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="#home" class="active">Home</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#installation">Installation</a></li>
+            <li><a href="#usage">Usage</a></li>
+            <li><a href="#categories">Categories</a></li>
+            <li><a href="#dotfiles">Dotfiles</a></li>
+            <li><a href="#theme">Theme</a></li>
+            <li><a href="#architecture">Architecture</a></li>
+            <li><a href="#troubleshooting">Troubleshooting</a></li>
+            <li><a href="#faq">FAQ</a></li>
+            <li><a href="#contributing">Contributing</a></li>
+            <li><a href="#license">License</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="https://github.com/0xClumzzy/rebound" class="github-link">GitHub</a>
+        </div>
+    </nav>
+
+    <main class="content">
+        <section id="home" class="hero">
+            <div class="hero-box">
+                <div class="hero-border">
+                    <pre>
+╔══════════════════════════════════════╗
+║ 0x██╗  REBOUND  v1.0                ║
+║   ╚╝╚═══╝                           ║
+║   Made by 0xClumzZy                 ║
+║   @github.com/0xClumzzy             ║
+╚══════════════════════════════════════╝</pre>
+                </div>
+            </div>
+            <h1>Rebound</h1>
+            <p class="hero-subtitle">A TUI tool to set up 0xClumzZy's Arch Linux environment on any Arch-based PC</p>
+            <div class="hero-badges">
+                <span class="badge badge-green">Rust</span>
+                <span class="badge badge-mauve">TUI</span>
+                <span class="badge badge-blue">Arch Linux</span>
+                <span class="badge badge-yellow">MIT License</span>
+            </div>
+            <div class="hero-actions">
+                <a href="#installation" class="btn btn-primary">Get Started</a>
+                <a href="https://github.com/0xClumzzy/rebound" class="btn btn-secondary">View on GitHub</a>
+            </div>
+        </section>
+
+        <section id="features">
+            <h2><span class="section-icon">✦</span> Features</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon mauve">⌨</div>
+                    <h3>Interactive TUI</h3>
+                    <p>Dark Catppuccin-inspired terminal interface with intuitive navigation using arrow keys, spacebar, and keyboard shortcuts.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon green">⚡</div>
+                    <h3>Auto Mode</h3>
+                    <p>Non-interactive <code>--auto</code> flag selects all tasks and runs immediately. Perfect for scripting and automated deployments.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon blue">📦</div>
+                    <h3>8 Setup Categories</h3>
+                    <p>Granular task selection across Base Packages, AUR Helper, BlackArch, Dev Tools, Shell Config, Desktop, Services, and Wallpapers.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon yellow">📁</div>
+                    <h3>Embedded Dotfiles</h3>
+                    <p>All configuration files are embedded directly in the binary. No external dotfile repo needed - everything deploys automatically.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon peach">🖼</div>
+                    <h3>34 Wallpapers</h3>
+                    <p>Dark aesthetic wallpapers included and deployed to <code>~/Pictures/wallpapers/</code> with a single task selection.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon red">🔒</div>
+                    <h3>Secure Password Input</h3>
+                    <p>Sudo password prompted before TUI starts with hidden input (displayed as stars). Cached for passwordless installs.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon teal">📊</div>
+                    <h3>Live Progress</h3>
+                    <p>Real-time progress bar with animated spinner, colored output log, and task completion tracking.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon pink">🎨</div>
+                    <h3>Dark Theme</h3>
+                    <p>Deep dark palette with high-contrast accents. Easy on the eyes during extended setup sessions.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="installation">
+            <h2><span class="section-icon">📥</span> Installation</h2>
+            
+            <div class="callout callout-info">
+                <strong>Requirements:</strong> Arch Linux (or Arch-based distro like EndeavourOS, Garuda, Manjaro), Internet connection, ~500MB disk space.
+            </div>
+
+            <h3>One-liner (Recommended)</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">bash</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>curl -sL https://raw.githubusercontent.com/0xClumzzy/rebound-/main/install.sh | bash</code></pre>
+            </div>
+
+            <h3>Direct Binary Download</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">bash</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>curl -sL https://github.com/0xClumzzy/rebound-/releases/download/v1.0.0/rebound-x86_64 -o ~/.local/bin/rebound
+chmod +x ~/.local/bin/rebound</code></pre>
+            </div>
+
+            <h3>Build from Source</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">bash</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>git clone https://github.com/0xClumzzy/rebound-.git
+cd rebound-
+cargo build --release
+cp target/release/rebound ~/.local/bin/</code></pre>
+            </div>
+
+            <h3>PATH Setup</h3>
+            <p>Ensure <code>~/.local/bin</code> is in your PATH:</p>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">bash</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc</code></pre>
+            </div>
+        </section>
+
+        <section id="usage">
+            <h2><span class="section-icon">🚀</span> Usage</h2>
+            
+            <div class="command-table">
+                <div class="command-row">
+                    <code>rebound</code>
+                    <span>Interactive TUI mode</span>
+                </div>
+                <div class="command-row">
+                    <code>rebound --auto</code>
+                    <span>Install everything automatically (no TUI)</span>
+                </div>
+                <div class="command-row">
+                    <code>rebound -a</code>
+                    <span>Same as --auto</span>
+                </div>
+                <div class="command-row">
+                    <code>rebound --help</code>
+                    <span>Show help message</span>
+                </div>
+                <div class="command-row">
+                    <code>rebound -h</code>
+                    <span>Same as --help</span>
+                </div>
+            </div>
+
+            <h3>Interactive Mode Workflow</h3>
+            <ol class="workflow-list">
+                <li>Launch <code>rebound</code></li>
+                <li>Enter sudo password when prompted (shown as <code>***</code>)</li>
+                <li>Browse categories with <kbd>↑</kbd> <kbd>↓</kbd> arrow keys</li>
+                <li>Press <kbd>Enter</kbd> to view tasks in a category</li>
+                <li>Select/deselect tasks with <kbd>Space</kbd></li>
+                <li>Press <kbd>a</kbd> to toggle all tasks in current category</li>
+                <li>Press <kbd>Backspace</kbd> to clear all tasks in category</li>
+                <li>Press <kbd>Enter</kbd> to start installation</li>
+                <li>Watch live progress with output log</li>
+                <li>Press <kbd>q</kbd> or <kbd>Esc</kbd> to go back or quit</li>
+            </ol>
+
+            <h3>Keyboard Shortcuts</h3>
+            <div class="shortcut-grid">
+                <div class="shortcut">
+                    <kbd>↑</kbd> <kbd>↓</kbd> / <kbd>j</kbd> <kbd>k</kbd>
+                    <span>Navigate</span>
+                </div>
+                <div class="shortcut">
+                    <kbd>Enter</kbd>
+                    <span>Select / Run</span>
+                </div>
+                <div class="shortcut">
+                    <kbd>Space</kbd>
+                    <span>Toggle task</span>
+                </div>
+                <div class="shortcut">
+                    <kbd>a</kbd>
+                    <span>Auto install / Toggle all</span>
+                </div>
+                <div class="shortcut">
+                    <kbd>Esc</kbd> / <kbd>q</kbd>
+                    <span>Back / Quit</span>
+                </div>
+                <div class="shortcut">
+                    <kbd>Backspace</kbd>
+                    <span>Clear category</span>
+                </div>
+            </div>
+        </section>
+
+        <section id="categories">
+            <h2><span class="section-icon">📂</span> Categories</h2>
+
+            <div class="category-card">
+                <h3><span class="category-icon">📦</span> Base Packages</h3>
+                <p>Core system utilities and tools</p>
+                <table>
+                    <thead>
+                        <tr><th>Task</th><th>Packages</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Core tools</td><td>base-devel, git, curl, wget, bat, eza, fzf, ripgrep, btop, fastfetch, tmux, trash-cli, zoxide, fd, tree, htop, 7zip, unzip, man-db, man-pages, less</td></tr>
+                        <tr><td>Shell</td><td>zsh, zsh-autosuggestions, zsh-syntax-highlighting, starship, thefuck</td></tr>
+                        <tr><td>Editors</td><td>micro, vim</td></tr>
+                        <tr><td>Networking</td><td>NetworkManager, nmap, openbsd-netcat, smbclient, dnsutils</td></tr>
+                        <tr><td>System</td><td>sudo, polkit, udisks2, pavucontrol, pulseaudio, bluez, bluez-utils, cups</td></tr>
+                        <tr><td>Fonts</td><td>ttf-dejavu, ttf-liberation, noto-fonts, noto-fonts-emoji, ttf-firacode-nerd, ttf-jetbrains-mono-nerd</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="category-card">
+                <h3><span class="category-icon">🔧</span> AUR Helper</h3>
+                <p>Arch User Repository helper setup</p>
+                <table>
+                    <thead>
+                        <tr><th>Task</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Install paru</td><td>Builds paru AUR helper from source (skips if already installed)</td></tr>
+                        <tr><td>AUR packages</td><td>noctalia-shell-bin, papirus-icon-theme, terminator</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="category-card">
+                <h3><span class="category-icon">🕵</span> BlackArch</h3>
+                <p>Penetration testing repository and tools</p>
+                <table>
+                    <thead>
+                        <tr><th>Task</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Setup repo</td><td>Adds BlackArch penetration testing repository (skips if already configured)</td></tr>
+                        <tr><td>Pentest tools</td><td>aircrack-ng, cewl, chisel, gobuster, feroxbuster, ffuf, nmap, sqlmap, nikto, hydra, john, hashcat</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="category-card">
+                <h3><span class="category-icon">💻</span> Dev Tools</h3>
+                <p>Programming languages and build tools</p>
+                <table>
+                    <thead>
+                        <tr><th>Task</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Rust</td><td>Installs via rustup (skips if already installed)</td></tr>
+                        <tr><td>Node.js</td><td>nvm + latest LTS version</td></tr>
+                        <tr><td>Go</td><td>Install via pacman</td></tr>
+                        <tr><td>Python</td><td>Python 3, pip, pipx</td></tr>
+                        <tr><td>Ruby</td><td>Install via pacman</td></tr>
+                        <tr><td>Build tools</td><td>gcc, g++, cmake, make, clang</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="category-card">
+                <h3><span class="category-icon">🐚</span> Shell Config</h3>
+                <p>Zsh framework and configuration files</p>
+                <table>
+                    <thead>
+                        <tr><th>Task</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Oh My Zsh</td><td>Installs Zsh framework (skips if already installed)</td></tr>
+                        <tr><td>.zshrc</td><td>Deploys zsh config with aliases & functions</td></tr>
+                        <tr><td>.gitconfig</td><td>Sets git identity (0xClumzZy)</td></tr>
+                        <tr><td>starship.toml</td><td>Catppuccin prompt config</td></tr>
+                        <tr><td>.bashrc</td><td>Deploys bash config</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="category-card">
+                <h3><span class="category-icon">🖥</span> Desktop</h3>
+                <p>Desktop environment and application configs</p>
+                <table>
+                    <thead>
+                        <tr><th>Task</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Noctalia</td><td>Wayland desktop shell config</td></tr>
+                        <tr><td>KDE colors</td><td>Noctalia color scheme + Monochrome</td></tr>
+                        <tr><td>KWin</td><td>Workspaces, wobbly windows, CurvedVolatile</td></tr>
+                        <tr><td>btop</td><td>Noctalia-themed system monitor</td></tr>
+                        <tr><td>Terminator</td><td>Transparent terminal + Gruvbox palette</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="category-card">
+                <h3><span class="category-icon">⚙</span> Services</h3>
+                <p>System service management</p>
+                <table>
+                    <thead>
+                        <tr><th>Task</th><th>Service Command</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>NetworkManager</td><td><code>systemctl enable --now NetworkManager</code></td></tr>
+                        <tr><td>Bluetooth</td><td><code>systemctl enable --now bluetooth</code></td></tr>
+                        <tr><td>CUPS</td><td><code>systemctl enable --now cups</code></td></tr>
+                        <tr><td>Samba</td><td><code>systemctl enable --now smb nmb</code></td></tr>
+                        <tr><td>Ollama</td><td><code>systemctl enable --now ollama</code></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="category-card">
+                <h3><span class="category-icon">🖼</span> Wallpapers</h3>
+                <p>34 dark aesthetic wallpapers deployed to <code>~/Pictures/wallpapers/</code></p>
+                <div class="wallpaper-grid">
+                    <div class="wallpaper-item">Aesthetic Black</div>
+                    <div class="wallpaper-item">Anime Collage</div>
+                    <div class="wallpaper-item">Atomic Blast</div>
+                    <div class="wallpaper-item">Dark Japanese</div>
+                    <div class="wallpaper-item">Sakura Blossom</div>
+                    <div class="wallpaper-item">+28 more</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="dotfiles">
+            <h2><span class="section-icon">📄</span> Embedded Dotfiles</h2>
+            <p>All dotfiles are embedded in the binary and deployed automatically. No external repository needed.</p>
+            
+            <table>
+                <thead>
+                    <tr><th>File</th><th>Deploy Location</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>.zshrc</code></td><td><code>~/.zshrc</code></td><td>Zsh config with aliases, functions, plugin loader</td></tr>
+                    <tr><td><code>.bashrc</code></td><td><code>~/.bashrc</code></td><td>Bash config with aliases and functions</td></tr>
+                    <tr><td><code>starship.toml</code></td><td><code>~/.config/starship.toml</code></td><td>Catppuccin-prompt theme</td></tr>
+                    <tr><td><code>.gitconfig</code></td><td><code>~/.gitconfig</code></td><td>Git identity (0xClumzZy)</td></tr>
+                    <tr><td><code>noctalia.toml</code></td><td><code>~/.config/noctalia/config.toml</code></td><td>Noctalia Shell config</td></tr>
+                    <tr><td><code>kdeglobals</code></td><td><code>~/.config/kdeglobals</code></td><td>KDE appearance settings</td></tr>
+                    <tr><td><code>kwinrc</code></td><td><code>~/.config/kwinrc</code></td><td>KWin window manager config</td></tr>
+                    <tr><td><code>btop.conf</code></td><td><code>~/.config/btop/btop.conf</code></td><td>System monitor theme</td></tr>
+                    <tr><td><code>terminator</code></td><td><code>~/.config/terminator/config</code></td><td>Terminal emulator config</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Key Aliases (from .zshrc)</h3>
+            <table>
+                <thead>
+                    <tr><th>Alias</th><th>Command</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>update</code></td><td><code>sudo pacman -Syu --noconfirm</code></td><td>Full system update</td></tr>
+                    <tr><td><code>get</code> / <code>need</code></td><td><code>sudo pacman -Sy --noconfirm</code></td><td>Install packages</td></tr>
+                    <tr><td><code>fuckup</code></td><td><code>sudo pacman -Rns --noconfirm</code></td><td>Remove packages</td></tr>
+                    <tr><td><code>lookfor</code></td><td><code>sudo pacman -Ss</code></td><td>Search packages</td></tr>
+                    <tr><td><code>fucking</code></td><td><code>sudo</code></td><td>Sudo shortcut</td></tr>
+                    <tr><td><code>rebootsafe</code></td><td><code>sudo shutdown -r now</code></td><td>Safe reboot</td></tr>
+                    <tr><td><code>network</code></td><td><code>sudo systemctl start --now NetworkManager</code></td><td>Start networking</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="theme">
+            <h2><span class="section-icon">🎨</span> Theme</h2>
+            <p>Rebound uses a deep dark Catppuccin-inspired palette with high-contrast accents for readability.</p>
+            
+            <div class="color-grid">
+                <div class="color-swatch" style="background: #0a0a0f;">
+                    <span class="color-name">Base</span>
+                    <span class="color-hex">#0a0a0f</span>
+                </div>
+                <div class="color-swatch" style="background: #08080d;">
+                    <span class="color-name">Mantle</span>
+                    <span class="color-hex">#08080d</span>
+                </div>
+                <div class="color-swatch" style="background: #050508;">
+                    <span class="color-name">Crust</span>
+                    <span class="color-hex">#050508</span>
+                </div>
+                <div class="color-swatch" style="background: #16161e;">
+                    <span class="color-name">Surface0</span>
+                    <span class="color-hex">#16161e</span>
+                </div>
+                <div class="color-swatch" style="background: #1e1e2a;">
+                    <span class="color-name">Surface1</span>
+                    <span class="color-hex">#1e1e2a</span>
+                </div>
+                <div class="color-swatch" style="background: #282838;">
+                    <span class="color-name">Surface2</span>
+                    <span class="color-hex">#282838</span>
+                </div>
+                <div class="color-swatch" style="background: #44445a;">
+                    <span class="color-name">Overlay0</span>
+                    <span class="color-hex">#44445a</span>
+                </div>
+                <div class="color-swatch" style="background: #5a5a74;">
+                    <span class="color-name">Overlay1</span>
+                    <span class="color-hex">#5a5a74</span>
+                </div>
+                <div class="color-swatch" style="background: #c8c8d8;">
+                    <span class="color-name">Text</span>
+                    <span class="color-hex">#c8c8d8</span>
+                </div>
+                <div class="color-swatch" style="background: #8888a0;">
+                    <span class="color-name">Subtext0</span>
+                    <span class="color-hex">#8888a0</span>
+                </div>
+                <div class="color-swatch" style="background: #c0a0f0;">
+                    <span class="color-name">Mauve</span>
+                    <span class="color-hex">#c0a0f0</span>
+                </div>
+                <div class="color-swatch" style="background: #90e890;">
+                    <span class="color-name">Green</span>
+                    <span class="color-hex">#90e890</span>
+                </div>
+                <div class="color-swatch" style="background: #f07090;">
+                    <span class="color-name">Red</span>
+                    <span class="color-hex">#f07090</span>
+                </div>
+                <div class="color-swatch" style="background: #e8d890;">
+                    <span class="color-name">Yellow</span>
+                    <span class="color-hex">#e8d890</span>
+                </div>
+                <div class="color-swatch" style="background: #7ba4f7;">
+                    <span class="color-name">Blue</span>
+                    <span class="color-hex">#7ba4f7</span>
+                </div>
+                <div class="color-swatch" style="background: #e8a870;">
+                    <span class="color-name">Peach</span>
+                    <span class="color-hex">#e8a870</span>
+                </div>
+            </div>
+
+            <h3>Usage in Code</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">rust</span>
+                </div>
+                <pre><code>// Theme constants
+pub const MAUVE: &str = "#c0a0f0";   // Accent/highlight
+pub const GREEN: &str = "#90e890";   // Success
+pub const RED: &str = "#f07090";     // Error
+pub const YELLOW: &str = "#e8d890";  // Warning
+pub const BLUE: &str = "#7ba4f7";    // Links/info
+
+// Helper functions
+pub fn color(hex: &str) -> ratatui::style::Color { ... }
+pub fn style(hex: &str) -> ratatui::style::Style { ... }
+pub fn bold(hex: &str) -> ratatui::style::Style { ... }
+pub fn dim(hex: &str) -> ratatui::style::Style { ... }</code></pre>
+            </div>
+        </section>
+
+        <section id="architecture">
+            <h2><span class="section-icon">🏗</span> Architecture</h2>
+            
+            <h3>Project Structure</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">text</span>
+                </div>
+                <pre><code>rebound/
+├── Cargo.toml          # Package manifest
+├── Cargo.lock          # Dependency lockfile
+├── install.sh          # One-liner installer
+├── README.md           # Project documentation
+├── src/
+│   ├── main.rs         # TUI app, event loop, rendering
+│   ├── tasks.rs        # Task & Category definitions, all install commands
+│   ├── runner.rs       # Background task executor with progress tracking
+│   ├── theme.rs        # Color palette & style helpers
+│   ├── wallpapers.rs   # Embedded wallpaper deployment
+│   ├── dotfiles/       # Embedded configuration files
+│   │   ├── .zshrc
+│   │   ├── .bashrc
+│   │   ├── starship.toml
+│   │   ├── noctalia.toml
+│   │   ├── kdeglobals
+│   │   ├── kwinrc
+│   │   ├── btop.conf
+│   │   └── terminator
+│   └── wallpapers/     # 34 embedded wallpaper images
+│       ├── 1.2.png
+│       ├── 2.jpg
+│       └── ... (34 files)
+└── docs/               # GitHub Pages documentation
+    ├── index.html
+    └── styles.css</code></pre>
+            </div>
+
+            <h3>Dependencies</h3>
+            <table>
+                <thead>
+                    <tr><th>Crate</th><th>Version</th><th>Purpose</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>ratatui</code></td><td>0.29</td><td>TUI framework for terminal UI rendering</td></tr>
+                    <tr><td><code>crossterm</code></td><td>0.28</td><td>Cross-platform terminal manipulation</td></tr>
+                    <tr><td><code>anyhow</code></td><td>1</td><td>Error handling with context</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Application States</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">rust</span>
+                </div>
+                <pre><code>enum AppState {
+    Splash,          // Initial splash screen (1.5s auto-advance)
+    SelectCategory,  // Browse & select categories
+    SelectTasks,     // Toggle individual tasks within a category
+    Running,         // Tasks executing in background thread
+    Done,            // All tasks finished, show summary
+}</code></pre>
+            </div>
+
+            <h3>Data Flow</h3>
+            <ol class="workflow-list">
+                <li><strong>Startup:</strong> <code>main()</code> parses args, prompts sudo password, initializes terminal</li>
+                <li><strong>Splash:</strong> Animated logo displayed for 1.5 seconds</li>
+                <li><strong>Category Selection:</strong> User browses 8 categories</li>
+                <li><strong>Task Selection:</strong> User toggles tasks within chosen category</li>
+                <li><strong>Execution:</strong> <code>Runner</code> spawns background thread, executes shell commands sequentially</li>
+                <li><strong>Progress:</strong> Shared <code>Arc&lt;Mutex&lt;T&gt;&gt;</code> state updated in real-time, UI polls every 50ms</li>
+                <li><strong>Completion:</strong> Success/failure summary displayed</li>
+            </ol>
+
+            <h3>Runner Implementation</h3>
+            <p>The <code>Runner</code> struct uses thread-safe shared state for concurrent UI updates:</p>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">rust</span>
+                </div>
+                <pre><code>pub struct Runner {
+    pub state: Arc&lt;Mutex&lt;RunState&gt;&gt;,        // Idle | Running | Done
+    pub output: Arc&lt;Mutex&lt;Vec&lt;String&gt;&gt;&gt;,   // Log lines
+    pub current: Arc&lt;Mutex&lt;usize&gt;&gt;,        // Progress counter
+    pub total: Arc&lt;Mutex&lt;usize&gt;&gt;,          // Total steps
+    pub current_name: Arc&lt;Mutex&lt;String&gt;&gt;,  // Current task name
+    pub success: Arc&lt;Mutex&lt;bool&gt;&gt;,         // All succeeded?
+    pub tick: Arc&lt;Mutex&lt;u64&gt;&gt;,             // Animation frame
+    pub failed_tasks: Arc&lt;Mutex&lt;Vec&lt;String&gt;&gt;&gt;,
+    pub last_progress: Arc&lt;Mutex&lt;Instant&gt;&gt;,
+}</code></pre>
+            </div>
+        </section>
+
+        <section id="troubleshooting">
+            <h2><span class="section-icon">🔧</span> Troubleshooting</h2>
+            
+            <div class="troubleshoot-item">
+                <h3>Sudo password not accepted</h3>
+                <p>Rebound prompts for your sudo password before the TUI starts. If you enter it incorrectly, you'll see a warning but the tool continues. Some tasks may fail without sudo access.</p>
+                <p><strong>Fix:</strong> Run <code>sudo -v</code> in another terminal to cache your password, then restart rebound.</p>
+            </div>
+
+            <div class="troubleshoot-item">
+                <h3>Command not found: rebound</h3>
+                <p>The binary isn't in your PATH.</p>
+                <p><strong>Fix:</strong> Ensure <code>~/.local/bin</code> is in your PATH or run with full path: <code>~/.local/bin/rebound</code></p>
+            </div>
+
+            <div class="troubleshoot-item">
+                <h3>Pacman lock error</h3>
+                <p>Another pacman process is running (possibly a system update or package manager GUI).</p>
+                <p><strong>Fix:</strong> Wait for the other process to finish, or check with <code>pgrep pacman</code>.</p>
+            </div>
+
+            <div class="troubleshoot-item">
+                <h3>BlackArch strap.sh fails</h3>
+                <p>Network issues or the BlackArch mirror is temporarily down.</p>
+                <p><strong>Fix:</strong> Try again later or manually download <code>strap.sh</code> from <code>https://blackarch.org/strap.sh</code>.</p>
+            </div>
+
+            <div class="troubleshoot-item">
+                <h3>AUR package build fails</h3>
+                <p>Missing build dependencies or AUR package updated.</p>
+                <p><strong>Fix:</strong> Install <code>base-devel</code> first (from Base Packages category), then retry AUR tasks.</p>
+            </div>
+
+            <div class="troubleshoot-item">
+                <h3>Wallpapers not deployed</h3>
+                <p>Permission denied writing to <code>~/Pictures/wallpapers/</code>.</p>
+                <p><strong>Fix:</strong> Ensure <code>~/Pictures</code> exists and is writable, or run with sudo.</p>
+            </div>
+        </section>
+
+        <section id="faq">
+            <h2><span class="section-icon">❓</span> FAQ</h2>
+            
+            <div class="faq-item">
+                <h3>What Linux distros are supported?</h3>
+                <p>Arch Linux and Arch-based distributions including EndeavourOS, Garuda, and Manjaro. The tool relies on <code>pacman</code> as the package manager.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>Can I use rebound on non-Arch systems?</h3>
+                <p>No. Rebound specifically uses <code>pacman</code> commands and Arch-specific repositories. It will not work on Debian, Fedora, or other distributions.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>How much disk space does a full install use?</h3>
+                <p>Approximately 500MB for all packages plus wallpaper images. The binary itself is small (a few MB) since wallpapers and dotfiles are embedded.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>Is it safe to run in auto mode?</h3>
+                <p>Auto mode selects and installs everything. It's designed for fresh installs. On an existing system, some packages may already be installed (they'll be skipped with <code>--needed</code>).</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>Can I customize the dotfiles?</h3>
+                <p>Yes. Edit the files in <code>src/dotfiles/</code> and rebuild with <code>cargo build --release</code>. The dotfiles are embedded via <code>include_str!</code> macros.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>How do I add my own wallpapers?</h3>
+                <p>Add image files to <code>src/wallpapers/</code> and register them in <code>src/wallpapers.rs</code> using <code>include_bytes!</code>. The wallpapers are deployed to <code>~/Pictures/wallpapers/</code>.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>Can I add new categories or tasks?</h3>
+                <p>Yes. Add new task functions in <code>src/tasks.rs</code> following the existing pattern. Each category returns a <code>Category</code> struct with a list of <code>Task</code> structs containing shell commands.</p>
+            </div>
+
+            <div class="faq-item">
+                <h3>Does rebound work with systemd-based Arch spins?</h3>
+                <p>Yes. All service management uses <code>systemctl</code> which is standard on systemd-based Arch systems.</p>
+            </div>
+        </section>
+
+        <section id="contributing">
+            <h2><span class="section-icon">🤝</span> Contributing</h2>
+            
+            <h3>Development Setup</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">bash</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>git clone https://github.com/0xClumzzy/rebound-.git
+cd rebound-
+cargo build
+cargo run</code></pre>
+            </div>
+
+            <h3>Adding a New Task</h3>
+            <ol class="workflow-list">
+                <li>Open <code>src/tasks.rs</code></li>
+                <li>Add a new <code>Task::new()</code> to the appropriate category function</li>
+                <li>Provide name, description, and shell commands as <code>vec!["command1", "command2"]</code></li>
+                <li>For file deployments, use <code>.with_files(vec![("~/.config/file", content())])</code></li>
+                <li>Build and test with <code>cargo run</code></li>
+            </ol>
+
+            <h3>Adding a New Category</h3>
+            <ol class="workflow-list">
+                <li>Create a new function in <code>src/tasks.rs</code> returning <code>Category</code></li>
+                <li>Add it to the <code>all_categories()</code> vector</li>
+                <li>The TUI will automatically include it</li>
+            </ol>
+
+            <h3>Code Style</h3>
+            <ul class="workflow-list">
+                <li>Follow existing patterns in the codebase</li>
+                <li>Use the theme helpers from <code>theme.rs</code> for consistent styling</li>
+                <li>Keep commands idempotent where possible (use <code>--needed</code> flag)</li>
+                <li>Test on a fresh Arch install or VM before submitting</li>
+            </ul>
+        </section>
+
+        <section id="license">
+            <h2><span class="section-icon">📜</span> License</h2>
+            <p>Rebound is released under the <strong>MIT License</strong>.</p>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">text</span>
+                </div>
+                <pre><code>MIT License
+
+Copyright (c) 2024 0xClumzZy
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</code></pre>
+            </div>
+
+            <div class="author-card">
+                <h3>Author</h3>
+                <p><strong>0xClumzZy</strong></p>
+                <a href="https://github.com/0xClumzzy" class="btn btn-secondary">github.com/0xClumzzy</a>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Copy code to clipboard
+        function copyCode(btn) {
+            const code = btn.closest('.code-block').querySelector('code').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = 'Copy', 2000);
+            });
+        }
+
+        // Active nav link on scroll
+        const sections = document.querySelectorAll('section');
+        const navLinks = document.querySelectorAll('.nav-links a');
+        
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (scrollY >= sectionTop - 200) {
+                    current = section.getAttribute('id');
+                }
+            });
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // Smooth scrolling
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = document.querySelector(link.getAttribute('href'));
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
+    </script>
+</body>
+</html>

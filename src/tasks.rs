@@ -8,6 +8,7 @@ pub struct Task {
     pub selected: bool,
     pub commands: Vec<String>,
     pub deploy_files: Vec<(String, String)>, // (relative_path, content)
+    pub is_wallpapers: bool,
 }
 
 #[derive(Clone)]
@@ -25,11 +26,17 @@ impl Task {
             selected: false,
             commands: commands.into_iter().map(String::from).collect(),
             deploy_files: Vec::new(),
+            is_wallpapers: false,
         }
     }
 
     pub fn with_files(mut self, files: Vec<(&str, &str)>) -> Self {
         self.deploy_files = files.into_iter().map(|(p, c)| (p.to_string(), c.to_string())).collect();
+        self
+    }
+
+    pub fn with_wallpapers(mut self) -> Self {
+        self.is_wallpapers = true;
         self
     }
 
@@ -64,7 +71,7 @@ fn starship() -> &'static str {
 }
 
 fn gitconfig() -> &'static str {
-    "[user]\n\tname = 0x\n\temail = email@gmail.com\n"
+    "[user]\n\tname = 0xClumzZy\n\temail = sustee848@gmail.com\n"
 }
 
 fn noctalia() -> &'static str {
@@ -214,6 +221,17 @@ fn services_config() -> Category {
     }
 }
 
+fn wallpapers_config() -> Category {
+    Category {
+        name: "Wallpapers".into(),
+        icon: ">".into(),
+        tasks: vec![
+            Task::new("Wallpapers", "Deploy 34 dark aesthetic wallpapers to ~/Pictures/wallpapers", vec![])
+                .with_wallpapers(),
+        ],
+    }
+}
+
 pub fn all_categories() -> Vec<Category> {
     vec![
         base_packages(),
@@ -223,5 +241,6 @@ pub fn all_categories() -> Vec<Category> {
         shell_config(),
         desktop_config(),
         services_config(),
+        wallpapers_config(),
     ]
 }

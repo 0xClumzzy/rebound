@@ -18,6 +18,7 @@ use ratatui::{
 mod tasks;
 mod runner;
 mod theme;
+mod wallpapers;
 
 use tasks::{Category, Task};
 use runner::Runner;
@@ -710,6 +711,8 @@ fn render_running(f: &mut Frame, app: &App) {
         .map(|line| {
             if line.contains("[ok]") || line.contains("complete") {
                 Line::from(Span::styled(line.as_str(), theme::style(theme::GREEN)))
+            } else if line.contains("SUDO") {
+                Line::from(Span::styled(line.as_str(), theme::bold(theme::YELLOW)))
             } else if line.starts_with("  \u{2502}") {
                 Line::from(Span::styled(line.as_str(), theme::dim(theme::OVERLAY1)))
             } else if line.contains("\u{2500}\u{2500}") {

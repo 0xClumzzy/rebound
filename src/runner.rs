@@ -66,16 +66,16 @@ impl Runner {
         let last_progress = Arc::clone(&self.last_progress);
         let home = home.to_string();
 
-        let tasks_owned: Vec<(String, Vec<String>, Vec<(String, String)>, bool)> = tasks
+        let tasks_owned: Vec<(String, Vec<String>, Vec<(String, String)>, bool, bool)> = tasks
             .iter()
             .map(|(cat, task)| {
                 let has_deploy = !task.deploy_files.is_empty();
-                (format!("{}  {}", cat.icon, task.name), task.commands.clone(), task.deploy_files.clone(), has_deploy)
+                (format!("{}  {}", cat.icon, task.name), task.commands.clone(), task.deploy_files.clone(), has_deploy, task.is_wallpapers)
             })
             .collect();
 
         thread::spawn(move || {
-            for (i, (name, commands, deploy_files, has_deploy)) in tasks_owned.iter().enumerate() {
+            for (i, (name, commands, deploy_files, has_deploy, is_wallpapers)) in tasks_owned.iter().enumerate() {
                 current_name.lock().unwrap().clone_from(name);
                 *current.lock().unwrap() = i;
                 *last_progress.lock().unwrap() = Instant::now();
@@ -83,6 +83,22 @@ impl Runner {
                 {
                     let mut out = output.lock().unwrap();
                     out.push(format!("  -- {} --", name));
+                }
+
+                // Handle wallpapers deployment
+                if *is_wallpapers {
+                    let results = crate::wallpapers::deploy_all(&home);
+                    for result in results {
+                        let mut out = output.lock().unwrap();
+                        match result {
+                            Ok(msg) => out.push(format!("  [ok] {}", msg)),
+                            Err(msg) => {
+                                out.push(format!("  [!!] {}", msg));
+                                *success.lock().unwrap() = false;
+                                failed.lock().unwrap().push(name.clone());
+                            }
+                        }
+                    }
                 }
 
                 // Deploy embedded files first
@@ -110,6 +126,14 @@ impl Runner {
                 for cmd in commands {
                     if cmd.starts_with('#') {
                         continue;
+                    }
+
+                    // Detect sudo commands and warn about password
+                    if cmd.contains("sudo") {
+                        let mut out = output.lock().unwrap();
+                        out.push("".to_string());
+                        out.push("  >> SUDO - enter password when prompted <<".to_string());
+                        out.push("".to_string());
                     }
 
                     {

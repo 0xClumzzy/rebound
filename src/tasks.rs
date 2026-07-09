@@ -64,7 +64,7 @@ fn starship() -> &'static str {
 }
 
 fn gitconfig() -> &'static str {
-    "[user]\n\tname = 0xClumzzy\n\temail = sustee848@gmail.com\n"
+    "[user]\n\tname = 0x\n\temail = email@gmail.com\n"
 }
 
 fn noctalia() -> &'static str {

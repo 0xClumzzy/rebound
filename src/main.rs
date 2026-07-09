@@ -1,4 +1,5 @@
-use std::io;
+use std::io::{self, Write};
+use std::process::Command;
 use std::time::Instant;
 
 use crossterm::{
@@ -130,6 +131,9 @@ fn main() -> anyhow::Result<()> {
         println!("  -h, --help    Show this help message");
         return Ok(());
     }
+
+    // Prompt for sudo password before TUI starts
+    prompt_sudo_password()?;
 
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -274,6 +278,46 @@ fn centered_area(f: &Frame, h: u16, w: u16) -> Rect {
     let x = (area.width.saturating_sub(w)) / 2;
     let y = (area.height.saturating_sub(h)) / 2;
     Rect::new(x, y, w.min(area.width), h.min(area.height))
+}
+
+fn prompt_sudo_password() -> anyhow::Result<()> {
+    use std::io::BufRead;
+
+    // Check if sudo is already cached
+    let check = Command::new("sudo").arg("-n").arg("true").output();
+    if check.is_ok() && check.unwrap().status.success() {
+        return Ok(());
+    }
+
+    // Prompt for password
+    eprint!("[sudo] password for user: ");
+    io::stderr().flush()?;
+
+    let stdin = io::stdin();
+    let password = stdin.lock().lines().next().unwrap_or_else(|| Ok(String::new()))?;
+
+    // Cache the password
+    let mut child = Command::new("sudo")
+        .arg("-S")
+        .arg("true")
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .spawn()?;
+
+    if let Some(mut stdin) = child.stdin.take() {
+        writeln!(stdin, "{}", password)?;
+    }
+    child.wait()?;
+
+    // Verify it worked
+    let verify = Command::new("sudo").arg("-n").arg("true").output();
+    if verify.is_ok() && verify.unwrap().status.success() {
+        Ok(())
+    } else {
+        eprintln!("[!] Incorrect password. Some tasks may require sudo.");
+        Ok(()) // Don't block, just warn
+    }
 }
 
 fn spinner(frame: u64) -> &'static str {

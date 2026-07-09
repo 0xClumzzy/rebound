@@ -1,6 +1,9 @@
 # rebound
 
-TUI tool to set up Clumzzy's Arch Linux environment on any PC.
+TUI tool to set up 0xClumzZy's Arch Linux environment on any PC.
+
+## Requirements
+A pc booted up with Arch linux
 
 ## Features
 
@@ -44,7 +47,7 @@ rebound --help    # Show help
 | Category | Packages |
 |----------|----------|
 | Base Packages | git, curl, wget, vim, nano, htop, btop, unzip, base-devel |
-| AUR Helper | yay |
+| AUR Helper | paru |
 | BlackArch | Full repo setup |
 | Dev Tools | rustup, nodejs, npm, python, docker, go |
 | Shell Config | zsh, oh-my-zsh, starship, zoxide, thefuck |

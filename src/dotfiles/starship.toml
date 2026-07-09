@@ -1,0 +1,119 @@
+format = """
+($username) %\
+[ in ](fg:#f0c6c6)\
+$directory\
+$git_branch\
+$git_status\
+$c\
+$elixir\
+$elm\
+$golang\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+$python\
+$docker_context \n\
+\t@$time\
+$line_break$character\
+"""
+command_timeout = 5000
+add_newline = false
+
+[username]
+show_always = true
+style_user = "fg:#ef9f76 bold"
+style_root = "fg:#d20f39 bold"
+format = '[\($user\)]($style)'
+
+[directory]
+style = "fg:#91d7e3"
+format = "[$path]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+
+[git_branch]
+symbol = " "
+style = "fg:#555555"
+format = '[ on $symbol$branch]($style)'
+
+[git_status]
+style = "fg:#555555"
+format = '[$all_status$ahead_behind]($style)'
+
+[c]
+symbol = "C "
+style = "fg:#3a3a3a"
+format = '[ \[$symbol$version\]]($style)'
+
+[docker_context]
+symbol = " "
+style = "fg:#3a3a3a"
+format = '[ \[$symbol$context\]]($style)$path'
+
+[elixir]
+symbol = "ex "
+style = "fg:#3a3a3a"
+format = '[ \[$symbol$version\]]($style)'
+
+[elm]
+symbol = "elm "
+style = "fg:#3a3a3a"
+format = '[ \[$symbol$version\]]($style)'
+
+[golang]
+symbol = "go "
+style = "fg:#3a3a3a"
+format = '[ \[$symbol$version\]]($style)'
+
+[haskell]
+symbol = "hs "
+style = "fg:#3a3a3a"
+format = '[ \[$symbol$version\]]($style)'
+
+[java]
+symbol = "java "
+style = "fg:#3a3a3a"
+format = '[ \[$symbol$version\]]($style)'
+
+[julia]
+symbol = "jl "
+style = "fg:#3a3a3a"
+format = '[ \[$symbol$version\]]($style)'
+
+[nodejs]
+symbol = "node "
+style = "fg:#3a3a3a"
+format = '[ \[$symbol$version\]]($style)'
+
+[nim]
+symbol = "nim "
+style = "fg:#3a3a3a"
+format = '[ \[$symbol$version\]]($style)'
+
+[python]
+style = "fg:#3a3a3a"
+format = '[ \[($virtualenv)\]]($style)'
+
+[rust]
+symbol = "rs "
+style = "fg:#3a3a3a"
+format = '[ \[$symbol$version\]]($style)'
+
+[time]
+disabled = false
+time_format = "%H:%M:%S"
+style = "fg:#a6da95"
+format = '[ $time]($style)'
+
+[character]
+success_symbol = "[❯](fg:#666666 bold)"
+error_symbol = "[❯](fg:#ffffff bold)"

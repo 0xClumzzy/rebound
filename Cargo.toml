@@ -1,0 +1,10 @@
+[package]
+name = "rebound"
+version = "0.1.0"
+edition = "2021"
+description = "TUI tool to set up Clumzzy's Arch Linux environment on any PC"
+
+[dependencies]
+ratatui = "0.29"
+crossterm = "0.28"
+anyhow = "1"

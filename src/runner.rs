@@ -41,6 +41,7 @@ impl Runner {
 
     pub fn run_all(&self, tasks: &[(&crate::tasks::Category, &Task)], home: &str) {
         *self.state.lock().unwrap() = RunState::Running;
+        *self.tick.lock().unwrap() = 0;
         *self.output.lock().unwrap() = vec![
             "----".repeat(12),
             "  rebound".to_string(),

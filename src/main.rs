@@ -349,11 +349,11 @@ fn prompt_sudo_password() -> anyhow::Result<()> {
 
 fn spinner(frame: u64) -> &'static str {
     match frame % 4 {
-        0 => "\u{25f7}",
-        1 => "\u{25f4}",
-        2 => "\u{25e2}",
-        3 => "\u{25e3}",
-        _ => "\u{25cb}",
+        0 => "|",
+        1 => "/",
+        2 => "-",
+        3 => "\\",
+        _ => "|",
     }
 }
 
@@ -717,26 +717,23 @@ fn render_running(f: &mut Frame, app: &App) {
     let filled = (pct as usize * bar_w) / 100;
 
     // Animate the leading edge of the bar in sync with progress
-    // Pulse for 500ms after each task completes, then settle
     let pulse_ms = elapsed.as_millis() as u64;
-    let bar_chars = ["\u{258f}", "\u{258e}", "\u{258d}", "\u{258c}", "\u{258b}", "\u{258a}", "\u{2589}", "\u{2588}"];
+    let bar_chars = [".", "o", "O", "o"];
     let anim_idx = if pulse_ms < 500 {
-        // Fast pulse right after progress
-        ((pulse_ms / 60) as usize) % bar_chars.len()
+        ((pulse_ms / 100) as usize) % bar_chars.len()
     } else {
-        // Slow idle pulse
-        ((tick / 3) as usize) % bar_chars.len()
+        ((tick / 4) as usize) % bar_chars.len()
     };
 
     let mut bar = String::new();
     for _ in 0..filled {
-        bar.push_str("\u{2588}");
+        bar.push('#');
     }
     if filled < bar_w {
         bar.push_str(bar_chars[anim_idx]);
     }
     for _ in (filled + 1)..bar_w {
-        bar.push('\u{2591}');
+        bar.push('-');
     }
 
     let spin = spinner(tick);

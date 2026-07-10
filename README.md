@@ -11,6 +11,10 @@ TUI tool to set up 0xClumzZy's Arch Linux environment on any arch based PC.
   ╚══════════════════════════════════════╝
 ```
 
+## Screenshots
+<img width="1808" height="870" alt="image" src="https://github.com/user-attachments/assets/daaecaa3-be8f-4d91-b97e-d5c86933d643" />
+
+
 ## Requirements
 
 - Arch Linux (or Arch-based distro like EndeavourOS, Garuda, Manjaro)

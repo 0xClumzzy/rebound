@@ -116,7 +116,7 @@ fn main() -> anyhow::Result<()> {
     let auto = args.contains(&"--auto".to_string()) || args.contains(&"-a".to_string());
 
     if args.contains(&"--help".to_string()) || args.contains(&"-h".to_string()) {
-        println!("rebound - Clumzzy's Arch Linux Environment Setup");
+        println!("rebound - 0xClumzZy's Arch Linux Environment Setup");
         println!();
         println!("USAGE:");
         println!("  rebound           Interactive TUI");

@@ -12,7 +12,8 @@ TUI tool to set up 0xClumzZy's Arch Linux environment on any arch based PC.
 ```
 
 ## Screenshots
-<img width="1808" height="870" alt="image" src="https://github.com/user-attachments/assets/daaecaa3-be8f-4d91-b97e-d5c86933d643" />
+<img width="1008" height="862" alt="image" src="https://github.com/user-attachments/assets/ae97ec64-18e0-4b00-937b-75dffdc3d85a" />
+
 
 
 ## Requirements

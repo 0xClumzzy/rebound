@@ -1,6 +1,5 @@
 use std::io::{self, Write};
 use std::process::Command;
-use std::time::Instant;
 
 use crossterm::{
     event::{self, Event, KeyCode, KeyEventKind},
@@ -15,6 +14,7 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Wrap},
     Frame, Terminal,
 };
+use ratatui::prelude::Stylize;
 
 mod tasks;
 mod runner;
@@ -39,8 +39,6 @@ struct App {
     cat_index: usize,
     task_index: usize,
     runner: Runner,
-    start_time: Instant,
-    splash_frame: u64,
     auto_mode: bool,
 }
 
@@ -52,8 +50,6 @@ impl App {
             cat_index: 0,
             task_index: 0,
             runner: Runner::new(),
-            start_time: Instant::now(),
-            splash_frame: 0,
             auto_mode: auto,
         }
     }
@@ -132,7 +128,6 @@ fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    // Prompt for sudo password before TUI starts
     prompt_sudo_password()?;
 
     enable_raw_mode()?;
@@ -153,8 +148,10 @@ fn main() -> anyhow::Result<()> {
 fn run_app<B: ratatui::backend::Backend>(
     terminal: &mut Terminal<B>,
     app: &mut App,
-) -> anyhow::Result<()> {
-    // Auto mode: skip splash, select all, run immediately
+) -> anyhow::Result<()>
+where
+    <B as ratatui::backend::Backend>::Error: Send + Sync + 'static,
+{
     if app.auto_mode {
         app.start_auto();
     }
@@ -162,18 +159,7 @@ fn run_app<B: ratatui::backend::Backend>(
     loop {
         terminal.draw(|f| ui(f, app))?;
 
-        // Splash auto-advance after 1.5s (skip in auto mode)
-        if app.state == AppState::Splash {
-            if app.start_time.elapsed().as_millis() > 1500 {
-                if app.auto_mode {
-                    app.start_auto();
-                } else {
-                    app.state = AppState::SelectCategory;
-                }
-            }
-        }
-
-        let timeout = if app.state == AppState::Running || app.state == AppState::Splash {
+        let timeout = if app.state == AppState::Running {
             std::time::Duration::from_millis(50)
         } else {
             std::time::Duration::from_millis(100)
@@ -283,17 +269,14 @@ fn centered_area(f: &Frame, h: u16, w: u16) -> Rect {
 fn prompt_sudo_password() -> anyhow::Result<()> {
     use crossterm::terminal;
 
-    // Check if sudo is already cached
     let check = Command::new("sudo").arg("-n").arg("true").output();
     if check.is_ok() && check.unwrap().status.success() {
         return Ok(());
     }
 
-    // Prompt for password
     eprint!("[sudo] password for user: ");
     io::stderr().flush()?;
 
-    // Read password with stars
     let mut password = String::new();
     terminal::enable_raw_mode()?;
     loop {
@@ -323,7 +306,6 @@ fn prompt_sudo_password() -> anyhow::Result<()> {
     }
     terminal::disable_raw_mode()?;
 
-    // Cache the password
     let mut child = Command::new("sudo")
         .arg("-S")
         .arg("true")
@@ -337,100 +319,167 @@ fn prompt_sudo_password() -> anyhow::Result<()> {
     }
     child.wait()?;
 
-    // Verify it worked
     let verify = Command::new("sudo").arg("-n").arg("true").output();
     if verify.is_ok() && verify.unwrap().status.success() {
         Ok(())
     } else {
         eprintln!("[!] Incorrect password. Some tasks may require sudo.");
-        Ok(()) // Don't block, just warn
+        Ok(())
     }
 }
 
 fn spinner(frame: u64) -> &'static str {
     match frame % 4 {
-        0 => "|",
-        1 => "/",
-        2 => "-",
-        3 => "\\",
-        _ => "|",
+        0 => "\u{2571}",
+        1 => "\u{2572}",
+        2 => "\u{2571}",
+        3 => "\u{2572}",
+        _ => "\u{2571}",
     }
 }
 
-fn border_style() -> Style {
+fn border_dim() -> Style {
     Style::default().fg(theme::color(theme::SURFACE2))
 }
 
-fn border_glow(hex: &str) -> Style {
+fn border_accent(hex: &str) -> Style {
     Style::default().fg(theme::color(hex))
 }
 
-fn render_splash(f: &mut Frame, app: &App) {
-    let area = centered_area(f, 14, 62);
+// ---- Splash Screen ----
 
-    let dim = theme::color(theme::SURFACE2);
-    let fg = theme::color(theme::TEXT);
-    let accent = theme::color(theme::MAUVE);
+fn render_splash(f: &mut Frame, _app: &App) {
+    let area = centered_area(f, 16, 66);
 
-    let lines = vec![
-        Line::from(""),
-        Line::from(vec![
-            Span::styled("  ", Style::default()),
-            Span::styled("\u{2554}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2557}",
-                Style::default().fg(dim)),
-        ]),
-        Line::from(vec![
-            Span::styled("  ", Style::default()),
-            Span::styled("\u{2551}", Style::default().fg(dim)),
-            Span::styled(" ", Style::default()),
-            Span::styled("0", Style::default().fg(fg).add_modifier(Modifier::BOLD)),
-            Span::styled("x", Style::default().fg(dim)),
-            Span::styled("\u{2588}\u{2588}", Style::default().fg(fg).add_modifier(Modifier::BOLD)),
-            Span::styled("\u{2557}", Style::default().fg(dim)),
-            Span::styled("  REBOUND  ", Style::default().fg(accent).add_modifier(Modifier::BOLD)),
-            Span::styled("v1.0", Style::default().fg(dim)),
-            Span::styled("                   \u{2551}", Style::default().fg(dim)),
-        ]),
-        Line::from(vec![
-            Span::styled("  ", Style::default()),
-            Span::styled("\u{2551}", Style::default().fg(dim)),
-            Span::styled("   ", Style::default()),
-            Span::styled("\u{255d}", Style::default().fg(dim)),
-            Span::styled("\u{2554}\u{2550}\u{2550}\u{2550}\u{255d}", Style::default().fg(fg)),
-            Span::styled("                      \u{2551}", Style::default().fg(dim)),
-        ]),
-        Line::from(vec![
-            Span::styled("  ", Style::default()),
-            Span::styled("\u{2551}", Style::default().fg(dim)),
-            Span::styled("   Made by ", Style::default().fg(fg)),
-            Span::styled("0xClumzZy", Style::default().fg(accent).add_modifier(Modifier::BOLD)),
-            Span::styled("                         \u{2551}", Style::default().fg(dim)),
-        ]),
-        Line::from(vec![
-            Span::styled("  ", Style::default()),
-            Span::styled("\u{2551}", Style::default().fg(dim)),
-            Span::styled("   ", Style::default()),
-            Span::styled("@github.com/0xClumzzy", Style::default().fg(dim)),
-            Span::styled("               \u{2551}", Style::default().fg(dim)),
-        ]),
-        Line::from(vec![
-            Span::styled("  ", Style::default()),
-            Span::styled("\u{255a}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2559}",
-                Style::default().fg(dim)),
-        ]),
-        Line::from(""),
-        Line::from(vec![
-            Span::styled("           --- ", theme::style(theme::SURFACE2)),
-            Span::styled("press any key", theme::dim(theme::OVERLAY0)),
-            Span::styled(" ---", theme::style(theme::SURFACE2)),
-        ]),
-        Line::from(""),
-        Line::from(vec![
-            Span::styled("           --- ", theme::style(theme::SURFACE2)),
-            Span::styled("or wait", theme::dim(theme::OVERLAY0)),
-            Span::styled(" ---", theme::style(theme::SURFACE2)),
-        ]),
-    ];
+    let w = area.width as usize;
+    let inner_w = w.saturating_sub(4);
+
+    let mut lines = Vec::new();
+    lines.push(Line::from(""));
+
+    // Gradient top border
+    let grad_top: Vec<Span> = (0..inner_w)
+        .map(|i| {
+            let t = i as f32 / inner_w as f32;
+            Span::styled("\u{2500}", Style::default().fg(theme::blend(theme::MAUVE, theme::BLUE, t)))
+        })
+        .collect();
+    let mut top_line: Vec<Span> = vec![Span::styled("  \u{256d}", Style::default().fg(theme::color(theme::MAUVE)))];
+    top_line.extend(grad_top);
+    top_line.push(Span::styled("\u{256e}", Style::default().fg(theme::color(theme::BLUE))));
+    lines.push(Line::from(top_line));
+
+    // Empty padding
+    for _ in 0..2 {
+        lines.push(Line::from(vec![
+            Span::styled("  \u{2502}", Style::default().fg(theme::color(theme::SURFACE2))),
+            Span::raw(" ".repeat(inner_w)),
+            Span::styled("\u{2502}", Style::default().fg(theme::color(theme::SURFACE2))),
+        ]));
+    }
+
+    // Logo line 1: ╔══╗
+    let logo_top_inner = "\u{2554}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2557}";
+    let padding_before_logo = (inner_w.saturating_sub(24)) / 2;
+    let padding_after_logo = inner_w.saturating_sub(24).saturating_sub(padding_before_logo);
+    lines.push(Line::from(vec![
+        Span::styled("  \u{2502}", Style::default().fg(theme::color(theme::SURFACE2))),
+        Span::raw(" ".repeat(padding_before_logo)),
+        Span::styled(logo_top_inner, Style::default().fg(theme::color(theme::TEXT))),
+        Span::raw(" ".repeat(padding_after_logo)),
+        Span::styled("\u{2502}", Style::default().fg(theme::color(theme::SURFACE2))),
+    ]));
+
+    // Logo line 2: 0x██ REBOUND v1.0
+    let _title = "0x\u{2588}\u{2588}";
+    let label = " REBOUND ";
+    let ver = "v1.0";
+    let logo_content_len = 8 + 10 + 4;
+    let pad_before = (inner_w.saturating_sub(logo_content_len)) / 2;
+    let pad_after = inner_w.saturating_sub(logo_content_len).saturating_sub(pad_before);
+    lines.push(Line::from(vec![
+        Span::styled("  \u{2502}", Style::default().fg(theme::color(theme::SURFACE2))),
+        Span::raw(" ".repeat(pad_before)),
+        Span::styled("0", Style::default().fg(theme::color(theme::TEXT)).add_modifier(Modifier::BOLD)),
+        Span::styled("x", Style::default().fg(theme::color(theme::OVERLAY0))),
+        Span::styled("\u{2588}\u{2588}", Style::default().fg(theme::color(theme::TEXT)).add_modifier(Modifier::BOLD)),
+        Span::styled(label, Style::default().fg(theme::color(theme::MAUVE)).add_modifier(Modifier::BOLD)),
+        Span::styled(ver, Style::default().fg(theme::color(theme::OVERLAY1))),
+        Span::raw(" ".repeat(pad_after)),
+        Span::styled("\u{2502}", Style::default().fg(theme::color(theme::SURFACE2))),
+    ]));
+
+    // Logo line 3: ╚══╝
+    let logo_bot_inner = "\u{255a}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{255d}";
+    lines.push(Line::from(vec![
+        Span::styled("  \u{2502}", Style::default().fg(theme::color(theme::SURFACE2))),
+        Span::raw(" ".repeat(padding_before_logo)),
+        Span::styled(logo_bot_inner, Style::default().fg(theme::color(theme::TEXT))),
+        Span::raw(" ".repeat(padding_after_logo)),
+        Span::styled("\u{2502}", Style::default().fg(theme::color(theme::SURFACE2))),
+    ]));
+
+    // Empty padding
+    for _ in 0..2 {
+        lines.push(Line::from(vec![
+            Span::styled("  \u{2502}", Style::default().fg(theme::color(theme::SURFACE2))),
+            Span::raw(" ".repeat(inner_w)),
+            Span::styled("\u{2502}", Style::default().fg(theme::color(theme::SURFACE2))),
+        ]));
+    }
+
+    // Author line
+    let author_text = "Made by 0xClumzZy";
+    let author_pad = (inner_w.saturating_sub(author_text.len())) / 2;
+    let author_pad_r = inner_w.saturating_sub(author_text.len()).saturating_sub(author_pad);
+    lines.push(Line::from(vec![
+        Span::styled("  \u{2502}", Style::default().fg(theme::color(theme::SURFACE2))),
+        Span::raw(" ".repeat(author_pad)),
+        Span::styled("Made by ", Style::default().fg(theme::color(theme::SUBTEXT0))),
+        Span::styled("0xClumzZy", Style::default().fg(theme::color(theme::MAUVE)).add_modifier(Modifier::BOLD)),
+        Span::raw(" ".repeat(author_pad_r)),
+        Span::styled("\u{2502}", Style::default().fg(theme::color(theme::SURFACE2))),
+    ]));
+
+    // GitHub line
+    let gh_text = "@github.com/0xClumzzy";
+    let gh_pad = (inner_w.saturating_sub(gh_text.len())) / 2;
+    let gh_pad_r = inner_w.saturating_sub(gh_text.len()).saturating_sub(gh_pad);
+    lines.push(Line::from(vec![
+        Span::styled("  \u{2502}", Style::default().fg(theme::color(theme::SURFACE2))),
+        Span::raw(" ".repeat(gh_pad)),
+        Span::styled(gh_text, Style::default().fg(theme::color(theme::OVERLAY1))),
+        Span::raw(" ".repeat(gh_pad_r)),
+        Span::styled("\u{2502}", Style::default().fg(theme::color(theme::SURFACE2))),
+    ]));
+
+    // Empty padding
+    for _ in 0..2 {
+        lines.push(Line::from(vec![
+            Span::styled("  \u{2502}", Style::default().fg(theme::color(theme::SURFACE2))),
+            Span::raw(" ".repeat(inner_w)),
+            Span::styled("\u{2502}", Style::default().fg(theme::color(theme::SURFACE2))),
+        ]));
+    }
+
+    // Gradient bottom border
+    let grad_bot: Vec<Span> = (0..inner_w)
+        .map(|i| {
+            let t = i as f32 / inner_w as f32;
+            Span::styled("\u{2500}", Style::default().fg(theme::blend(theme::BLUE, theme::MAUVE, t)))
+        })
+        .collect();
+    let mut bot_line: Vec<Span> = vec![Span::styled("  \u{2570}", Style::default().fg(theme::color(theme::BLUE)))];
+    bot_line.extend(grad_bot);
+    bot_line.push(Span::styled("\u{256f}", Style::default().fg(theme::color(theme::MAUVE))));
+    lines.push(Line::from(bot_line));
+
+    // Prompt
+    lines.push(Line::from(""));
+    lines.push(Line::from(vec![
+        Span::styled("  press any key", Style::default().fg(theme::color(theme::OVERLAY0))).add_modifier(Modifier::DIM),
+        Span::styled("  or wait", Style::default().fg(theme::color(theme::SURFACE2))).add_modifier(Modifier::DIM),
+    ]));
 
     let widget = Paragraph::new(lines)
         .alignment(Alignment::Center)
@@ -442,34 +491,41 @@ fn render_splash(f: &mut Frame, app: &App) {
     f.render_widget(widget, area);
 }
 
+// ---- Categories Screen ----
+
 fn render_categories(f: &mut Frame, app: &App) {
+    let area = f.area();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(4),
+            Constraint::Length(5),
             Constraint::Min(8),
             Constraint::Length(3),
         ])
-        .split(f.area());
+        .split(area);
 
     let total = app.total_selected();
+    let total_tasks: usize = app.categories.iter().map(|c| c.tasks.len()).sum();
 
+    // Header with title and keybinds
     let header_lines = vec![
         Line::from(vec![
             Span::styled("  rebound", theme::bold(theme::MAUVE)),
             Span::styled("  \u{2502}  ", theme::style(theme::SURFACE2)),
-            Span::styled("Clumzzy's Arch Linux", theme::style(theme::SUBTEXT0)),
+            Span::styled("Clumzzy's Arch Linux Environment", theme::style(theme::SUBTEXT0)),
         ]),
         Line::from(""),
         Line::from(vec![
-            Span::styled("  \u{2191}\u{2193}", theme::bold(theme::GREEN)),
-            Span::styled(" navigate  ", theme::dim(theme::OVERLAY0)),
+            Span::styled("  ", Style::default()),
+            Span::styled("\u{2191}\u{2193}", theme::bold(theme::GREEN)),
+            Span::styled(" navigate ", theme::dim(theme::OVERLAY0)),
+            Span::styled("  ", Style::default()),
             Span::styled("\u{23ce}", theme::bold(theme::BLUE)),
-            Span::styled(" select  ", theme::dim(theme::OVERLAY0)),
+            Span::styled(" open ", theme::dim(theme::OVERLAY0)),
+            Span::styled("  ", Style::default()),
             Span::styled("a", theme::bold(theme::MAUVE)),
-            Span::styled(" ", theme::dim(theme::OVERLAY0)),
-            Span::styled("auto install", theme::bold(theme::MAUVE)),
-            Span::styled("  ", theme::dim(theme::OVERLAY0)),
+            Span::styled(" auto ", theme::dim(theme::OVERLAY0)),
+            Span::styled("  ", Style::default()),
             Span::styled("q", theme::bold(theme::RED)),
             Span::styled(" quit", theme::dim(theme::OVERLAY0)),
         ]),
@@ -480,12 +536,12 @@ fn render_categories(f: &mut Frame, app: &App) {
             Block::default()
                 .borders(Borders::ALL)
                 .border_type(ratatui::widgets::BorderType::Rounded)
-                .border_style(border_glow(theme::MAUVE))
+                .border_style(border_accent(theme::MAUVE))
                 .style(Style::default().bg(theme::color(theme::CRUST)))
         );
     f.render_widget(header, chunks[0]);
 
-    // Category list
+    // Category list with icons
     let items: Vec<ListItem> = app
         .categories
         .iter()
@@ -493,8 +549,9 @@ fn render_categories(f: &mut Frame, app: &App) {
         .map(|(i, cat)| {
             let sel = cat.tasks.iter().filter(|t| t.selected).count();
             let is_active = i == app.cat_index;
+            let task_count = cat.tasks.len();
 
-            let style = if is_active {
+            let name_style = if is_active {
                 theme::bold(theme::MAUVE)
             } else {
                 theme::style(theme::TEXT)
@@ -502,23 +559,29 @@ fn render_categories(f: &mut Frame, app: &App) {
 
             let badge = if sel > 0 {
                 Span::styled(
-                    format!(" {} ", sel),
-                    Style::default().fg(theme::color(theme::CRUST)).bg(theme::color(theme::GREEN)).add_modifier(Modifier::BOLD),
+                    format!(" {}/{} ", sel, task_count),
+                    theme::bold_bg(theme::CRUST, theme::GREEN),
                 )
             } else {
-                Span::raw("")
+                Span::styled(
+                    format!(" {} ", task_count),
+                    theme::style(theme::OVERLAY0),
+                )
             };
 
-            let arrow = if is_active {
-                Span::styled(" \u{25b6} ", theme::bold(theme::MAUVE))
+            let indicator = if is_active {
+                Span::styled(" \u{25b8} ", theme::bold(theme::MAUVE))
             } else {
-                Span::raw("   ")
+                Span::styled("   ", Style::default())
             };
+
+            let icon_span = Span::styled(format!("{} ", cat.icon), Style::default());
 
             ListItem::new(Line::from(vec![
-                arrow,
-                Span::styled(&cat.name, style),
-                Span::styled(format!("  \u{2014} {} tasks", cat.tasks.len()), theme::dim(theme::OVERLAY0)),
+                indicator,
+                icon_span,
+                Span::styled(&cat.name, name_style),
+                Span::styled("  \u{2500}  ", theme::dim(theme::SURFACE2)),
                 badge,
             ]))
         })
@@ -527,13 +590,20 @@ fn render_categories(f: &mut Frame, app: &App) {
     let list = List::new(items)
         .block(
             Block::default()
-                .title(Span::styled("  Categories  ", theme::bold(theme::MAUVE)))
+                .title(Span::styled(
+                    format!("  Categories  \u{2502}  {} total ", total_tasks),
+                    theme::dim(theme::OVERLAY0),
+                ))
                 .borders(Borders::ALL)
                 .border_type(ratatui::widgets::BorderType::Rounded)
-                .border_style(border_style())
+                .border_style(border_dim())
                 .style(Style::default().bg(theme::color(theme::CRUST)))
         )
-        .highlight_style(Style::default().bg(theme::color(theme::SURFACE0)));
+        .highlight_style(
+            Style::default()
+                .bg(theme::color(theme::SURFACE0))
+                .add_modifier(Modifier::BOLD)
+        );
 
     let mut state = ListState::default();
     state.select(Some(app.cat_index));
@@ -542,18 +612,20 @@ fn render_categories(f: &mut Frame, app: &App) {
     // Footer
     let footer_text = if total > 0 {
         vec![
-            Span::styled("  ", theme::style(theme::SURFACE2)),
+            Span::styled("  ", Style::default()),
             Span::styled(format!("{}", total), theme::bold(theme::GREEN)),
             Span::styled(" selected  ", theme::dim(theme::SUBTEXT0)),
+            Span::styled("  ", Style::default()),
             Span::styled("\u{23ce}", theme::bold(theme::BLUE)),
             Span::styled(" run", theme::dim(theme::OVERLAY0)),
         ]
     } else {
         vec![
-            Span::styled("  ", theme::style(theme::SURFACE2)),
+            Span::styled("  ", Style::default()),
             Span::styled("press ", theme::dim(theme::OVERLAY0)),
             Span::styled("a", theme::bold(theme::MAUVE)),
-            Span::styled(" auto install all  ", theme::dim(theme::OVERLAY0)),
+            Span::styled(" auto install  ", theme::dim(theme::OVERLAY0)),
+            Span::styled("  ", Style::default()),
             Span::styled("\u{23ce}", theme::bold(theme::BLUE)),
             Span::styled(" pick tasks", theme::dim(theme::OVERLAY0)),
         ]
@@ -564,21 +636,24 @@ fn render_categories(f: &mut Frame, app: &App) {
             Block::default()
                 .borders(Borders::ALL)
                 .border_type(ratatui::widgets::BorderType::Rounded)
-                .border_style(border_style())
+                .border_style(border_dim())
                 .style(Style::default().bg(theme::color(theme::CRUST)))
         );
     f.render_widget(footer, chunks[2]);
 }
 
+// ---- Tasks Screen ----
+
 fn render_tasks(f: &mut Frame, app: &App) {
+    let area = f.area();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(4),
+            Constraint::Length(5),
             Constraint::Min(8),
             Constraint::Length(3),
         ])
-        .split(f.area());
+        .split(area);
 
     let cat = &app.categories[app.cat_index];
     let sel = cat.tasks.iter().filter(|t| t.selected).count();
@@ -587,18 +662,23 @@ fn render_tasks(f: &mut Frame, app: &App) {
         Line::from(vec![
             Span::styled(format!("  {} ", cat.icon), Style::default()),
             Span::styled(&cat.name, theme::bold(theme::MAUVE)),
-            Span::styled(format!("  \u{2502}  {}/{}", sel, cat.tasks.len()), theme::dim(theme::SUBTEXT0)),
+            Span::styled(format!("  \u{2502}  {}/{} selected", sel, cat.tasks.len()), theme::dim(theme::SUBTEXT0)),
         ]),
         Line::from(""),
         Line::from(vec![
-            Span::styled("  \u{2191}\u{2193}", theme::bold(theme::GREEN)),
-            Span::styled(" nav  ", theme::dim(theme::OVERLAY0)),
+            Span::styled("  ", Style::default()),
+            Span::styled("\u{2191}\u{2193}", theme::bold(theme::GREEN)),
+            Span::styled(" nav ", theme::dim(theme::OVERLAY0)),
+            Span::styled("  ", Style::default()),
             Span::styled("\u{2423}", theme::bold(theme::BLUE)),
-            Span::styled(" toggle  ", theme::dim(theme::OVERLAY0)),
+            Span::styled(" toggle ", theme::dim(theme::OVERLAY0)),
+            Span::styled("  ", Style::default()),
             Span::styled("a", theme::bold(theme::YELLOW)),
-            Span::styled(" all  ", theme::dim(theme::OVERLAY0)),
+            Span::styled(" all ", theme::dim(theme::OVERLAY0)),
+            Span::styled("  ", Style::default()),
             Span::styled("\u{232b}", theme::bold(theme::RED)),
-            Span::styled(" clear  ", theme::dim(theme::OVERLAY0)),
+            Span::styled(" clear ", theme::dim(theme::OVERLAY0)),
+            Span::styled("  ", Style::default()),
             Span::styled("esc", theme::bold(theme::PEACH)),
             Span::styled(" back", theme::dim(theme::OVERLAY0)),
         ]),
@@ -609,7 +689,7 @@ fn render_tasks(f: &mut Frame, app: &App) {
             Block::default()
                 .borders(Borders::ALL)
                 .border_type(ratatui::widgets::BorderType::Rounded)
-                .border_style(border_glow(theme::MAUVE))
+                .border_style(border_accent(theme::MAUVE))
                 .style(Style::default().bg(theme::color(theme::CRUST)))
         );
     f.render_widget(header, chunks[0]);
@@ -637,17 +717,18 @@ fn render_tasks(f: &mut Frame, app: &App) {
                 theme::style(theme::TEXT)
             };
 
-            let arrow = if is_active {
-                Span::styled(" \u{25b6} ", theme::bold(theme::MAUVE))
+            let indicator = if is_active {
+                Span::styled(" \u{25b8} ", theme::bold(theme::MAUVE))
             } else {
-                Span::raw("   ")
+                Span::styled("   ", Style::default())
             };
 
             ListItem::new(Line::from(vec![
-                arrow,
+                indicator,
                 Span::styled(format!("{} ", check), check_style),
                 Span::styled(&task.name, name_style),
-                Span::styled(format!("  \u{2014} {}", task.desc), theme::dim(theme::OVERLAY0)),
+                Span::styled("  \u{2500}  ", theme::dim(theme::SURFACE2)),
+                Span::styled(&task.desc, theme::dim(theme::OVERLAY0)),
             ]))
         })
         .collect();
@@ -658,10 +739,14 @@ fn render_tasks(f: &mut Frame, app: &App) {
                 .title(Span::styled("  Tasks  ", theme::bold(theme::MAUVE)))
                 .borders(Borders::ALL)
                 .border_type(ratatui::widgets::BorderType::Rounded)
-                .border_style(border_style())
+                .border_style(border_dim())
                 .style(Style::default().bg(theme::color(theme::CRUST)))
         )
-        .highlight_style(Style::default().bg(theme::color(theme::SURFACE0)));
+        .highlight_style(
+            Style::default()
+                .bg(theme::color(theme::SURFACE0))
+                .add_modifier(Modifier::BOLD)
+        );
 
     let mut state = ListState::default();
     state.select(Some(app.task_index));
@@ -670,20 +755,22 @@ fn render_tasks(f: &mut Frame, app: &App) {
     let total = app.total_selected();
     let footer_text = if total > 0 {
         vec![
-            Span::styled("  ", theme::style(theme::SURFACE2)),
+            Span::styled("  ", Style::default()),
             Span::styled(format!("{}", total), theme::bold(theme::GREEN)),
             Span::styled(" queued  ", theme::dim(theme::SUBTEXT0)),
+            Span::styled("  ", Style::default()),
             Span::styled("\u{23ce}", theme::bold(theme::BLUE)),
             Span::styled(" run  ", theme::dim(theme::OVERLAY0)),
+            Span::styled("  ", Style::default()),
             Span::styled("\u{232b}", theme::bold(theme::RED)),
             Span::styled(" clear", theme::dim(theme::OVERLAY0)),
         ]
     } else {
         vec![
-            Span::styled("  ", theme::style(theme::SURFACE2)),
+            Span::styled("  ", Style::default()),
             Span::styled("press ", theme::dim(theme::OVERLAY0)),
             Span::styled("\u{2423}", theme::bold(theme::BLUE)),
-            Span::styled(" to select", theme::dim(theme::OVERLAY0)),
+            Span::styled(" to select a task", theme::dim(theme::OVERLAY0)),
         ]
     };
 
@@ -692,31 +779,34 @@ fn render_tasks(f: &mut Frame, app: &App) {
             Block::default()
                 .borders(Borders::ALL)
                 .border_type(ratatui::widgets::BorderType::Rounded)
-                .border_style(border_style())
+                .border_style(border_dim())
                 .style(Style::default().bg(theme::color(theme::CRUST)))
         );
     f.render_widget(footer, chunks[2]);
 }
 
+// ---- Running Screen ----
+
 fn render_running(f: &mut Frame, app: &App) {
+    let area = f.area();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(5),
+            Constraint::Length(6),
             Constraint::Min(8),
             Constraint::Length(2),
         ])
-        .split(f.area());
+        .split(area);
 
     let (current, total, current_name) = app.runner.progress();
     let pct = if total > 0 { current * 100 / total } else { 0 };
     let tick = app.runner.tick();
     let elapsed = app.runner.elapsed_since_progress();
 
-    let bar_w = 40;
+    // Gradient progress bar
+    let bar_w = 50;
     let filled = (pct as usize * bar_w) / 100;
 
-    // Animate the leading edge of the bar in sync with progress
     let pulse_ms = elapsed.as_millis() as u64;
     let bar_chars = [".", "o", "O", "o"];
     let anim_idx = if pulse_ms < 500 {
@@ -725,15 +815,26 @@ fn render_running(f: &mut Frame, app: &App) {
         ((tick / 4) as usize) % bar_chars.len()
     };
 
-    let mut bar = String::new();
-    for _ in 0..filled {
-        bar.push('#');
-    }
-    if filled < bar_w {
-        bar.push_str(bar_chars[anim_idx]);
-    }
-    for _ in (filled + 1)..bar_w {
-        bar.push('-');
+    let mut bar_spans: Vec<Span> = Vec::new();
+    for i in 0..bar_w {
+        if i < filled {
+            let t = i as f32 / bar_w as f32;
+            bar_spans.push(Span::styled(
+                "\u{2588}",
+                Style::default().fg(theme::blend(theme::GREEN, theme::TEAL, t)),
+            ));
+        } else if i == filled && filled < bar_w {
+            let t = filled as f32 / bar_w as f32;
+            bar_spans.push(Span::styled(
+                bar_chars[anim_idx],
+                Style::default().fg(theme::blend(theme::GREEN, theme::TEAL, t)),
+            ));
+        } else {
+            bar_spans.push(Span::styled(
+                "\u{2592}",
+                Style::default().fg(theme::color(theme::SURFACE1)),
+            ));
+        }
     }
 
     let spin = spinner(tick);
@@ -742,16 +843,19 @@ fn render_running(f: &mut Frame, app: &App) {
         Line::from(vec![
             Span::styled(format!("  {} ", spin), theme::bold(theme::MAUVE)),
             Span::styled("Running", theme::bold(theme::MAUVE)),
-            Span::styled(format!("  \u{2502}  {}/{}", current, total), theme::dim(theme::SUBTEXT0)),
+            Span::styled(format!("  \u{2502}  {}/{} tasks", current, total), theme::dim(theme::SUBTEXT0)),
         ]),
         Line::from(""),
-        Line::from(vec![
-            Span::styled("  ", Style::default()),
-            Span::styled(&bar, theme::bold(theme::GREEN)),
-            Span::styled(format!("  {}%", pct), theme::bold(theme::YELLOW)),
-            Span::styled("  \u{2502}  ", theme::style(theme::SURFACE2)),
-            Span::styled(&current_name, theme::style(theme::TEXT)),
-        ]),
+        Line::from({
+            let mut v: Vec<Span> = vec![
+                Span::styled("  ", Style::default()),
+            ];
+            v.extend(bar_spans);
+            v.push(Span::styled(format!("  {}%", pct), theme::bold(theme::YELLOW)));
+            v.push(Span::styled("  \u{2502}  ", theme::style(theme::SURFACE2)));
+            v.push(Span::styled(&current_name, theme::style(theme::TEXT)));
+            v
+        }),
     ];
 
     let header = Paragraph::new(header_lines)
@@ -759,7 +863,7 @@ fn render_running(f: &mut Frame, app: &App) {
             Block::default()
                 .borders(Borders::ALL)
                 .border_type(ratatui::widgets::BorderType::Rounded)
-                .border_style(border_glow(theme::MAUVE))
+                .border_style(border_accent(theme::MAUVE))
                 .style(Style::default().bg(theme::color(theme::CRUST)))
         );
     f.render_widget(header, chunks[0]);
@@ -773,7 +877,7 @@ fn render_running(f: &mut Frame, app: &App) {
         0
     };
 
-    let lines: Vec<Line> = output
+    let log_lines: Vec<Line> = output
         .iter()
         .skip(scroll)
         .map(|line| {
@@ -799,20 +903,20 @@ fn render_running(f: &mut Frame, app: &App) {
         })
         .collect();
 
-    let output_widget = Paragraph::new(lines)
+    let output_widget = Paragraph::new(log_lines)
         .wrap(Wrap { trim: false })
         .block(
             Block::default()
                 .title(Span::styled("  Output  ", theme::bold(theme::BLUE)))
                 .borders(Borders::ALL)
                 .border_type(ratatui::widgets::BorderType::Rounded)
-                .border_style(border_glow(theme::BLUE))
+                .border_style(border_accent(theme::BLUE))
                 .style(Style::default().bg(theme::color(theme::CRUST)))
         );
     f.render_widget(output_widget, chunks[1]);
 
     let footer = Paragraph::new(Line::from(vec![
-        Span::styled("  ", theme::style(theme::SURFACE2)),
+        Span::styled("  ", Style::default()),
         Span::styled("q", theme::bold(theme::RED)),
         Span::styled(" quit", theme::dim(theme::OVERLAY0)),
     ]))
@@ -820,13 +924,16 @@ fn render_running(f: &mut Frame, app: &App) {
         Block::default()
             .borders(Borders::ALL)
             .border_type(ratatui::widgets::BorderType::Rounded)
-            .border_style(border_style())
+            .border_style(border_dim())
             .style(Style::default().bg(theme::color(theme::CRUST)))
     );
     f.render_widget(footer, chunks[2]);
 }
 
+// ---- Done Screen ----
+
 fn render_done(f: &mut Frame, app: &App) {
+    let area = f.area();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -834,27 +941,26 @@ fn render_done(f: &mut Frame, app: &App) {
             Constraint::Min(8),
             Constraint::Length(2),
         ])
-        .split(f.area());
+        .split(area);
 
     let success = app.runner.all_success();
     let completed = app.runner.total_completed();
 
-    let (title, icon, accent) = if success {
-        ("Setup Complete!", "[ok]", theme::GREEN)
+    let (title, accent) = if success {
+        ("\u{2714}  Setup Complete!", theme::GREEN)
     } else {
-        ("Finished with Errors", "[!!]", theme::YELLOW)
+        ("\u{2716}  Finished with Errors", theme::YELLOW)
     };
 
     let header_lines = vec![
         Line::from(vec![
-            Span::styled(format!("  {} ", icon), theme::bold(accent)),
-            Span::styled(title, theme::bold(accent)),
+            Span::styled(format!("  {} ", title), theme::bold(accent)),
         ]),
         Line::from(""),
         Line::from(vec![
-            Span::styled("  ", theme::style(theme::SURFACE2)),
+            Span::styled("  ", Style::default()),
             Span::styled(format!("{}", completed), theme::bold(theme::GREEN)),
-            Span::styled(" task(s) completed", theme::dim(theme::SUBTEXT0)),
+            Span::styled(" task(s) completed successfully", theme::dim(theme::SUBTEXT0)),
         ]),
     ];
 
@@ -863,7 +969,7 @@ fn render_done(f: &mut Frame, app: &App) {
             Block::default()
                 .borders(Borders::ALL)
                 .border_type(ratatui::widgets::BorderType::Rounded)
-                .border_style(border_glow(accent))
+                .border_style(border_accent(accent))
                 .style(Style::default().bg(theme::color(theme::CRUST)))
         );
     f.render_widget(header, chunks[0]);
@@ -891,13 +997,13 @@ fn render_done(f: &mut Frame, app: &App) {
                 .title(Span::styled("  Summary  ", theme::bold(theme::GREEN)))
                 .borders(Borders::ALL)
                 .border_type(ratatui::widgets::BorderType::Rounded)
-                .border_style(border_glow(theme::GREEN))
+                .border_style(border_accent(theme::GREEN))
                 .style(Style::default().bg(theme::color(theme::CRUST)))
         );
     f.render_widget(output_widget, chunks[1]);
 
     let footer = Paragraph::new(Line::from(vec![
-        Span::styled("  ", theme::style(theme::SURFACE2)),
+        Span::styled("  ", Style::default()),
         Span::styled("press ", theme::dim(theme::OVERLAY0)),
         Span::styled("enter", theme::bold(theme::BLUE)),
         Span::styled(" or ", theme::dim(theme::OVERLAY0)),
@@ -908,7 +1014,7 @@ fn render_done(f: &mut Frame, app: &App) {
         Block::default()
             .borders(Borders::ALL)
             .border_type(ratatui::widgets::BorderType::Rounded)
-            .border_style(border_glow(theme::GREEN))
+            .border_style(border_accent(theme::GREEN))
             .style(Style::default().bg(theme::color(theme::CRUST)))
     );
     f.render_widget(footer, chunks[2]);

@@ -1,29 +1,39 @@
-// Deep dark palette - extra blacks with high contrast accents
-pub const BASE: &str = "#0a0a0f";
-pub const MANTLE: &str = "#08080d";
-pub const CRUST: &str = "#050508";
-pub const SURFACE0: &str = "#16161e";
-pub const SURFACE1: &str = "#1e1e2a";
-pub const SURFACE2: &str = "#282838";
-pub const OVERLAY0: &str = "#44445a";
-pub const OVERLAY1: &str = "#5a5a74";
-pub const TEXT: &str = "#c8c8d8";
-pub const SUBTEXT0: &str = "#8888a0";
-pub const SUBTEXT1: &str = "#a0a0b8";
-pub const LAVENDER: &str = "#b4befe";
-pub const BLUE: &str = "#7ba4f7";
-pub const SAPPHIRE: &str = "#6ac0e8";
-pub const SKY: &str = "#7ad8e8";
-pub const TEAL: &str = "#80e0c8";
-pub const GREEN: &str = "#90e890";
-pub const YELLOW: &str = "#e8d890";
-pub const PEACH: &str = "#e8a870";
-pub const MAROON: &str = "#e09090";
-pub const RED: &str = "#f07090";
-pub const MAUVE: &str = "#c0a0f0";
-pub const PINK: &str = "#e8b0d8";
-pub const FLAMINGO: &str = "#e0c8c8";
-pub const ROSEWATER: &str = "#e8d0c8";
+// Midnight Violet - cohesive dark palette with purple accent
+pub const BASE: &str = "#0c0c14";
+pub const MANTLE: &str = "#0a0a12";
+pub const CRUST: &str = "#06060c";
+pub const SURFACE0: &str = "#12121c";
+pub const SURFACE1: &str = "#1a1a26";
+pub const SURFACE2: &str = "#242432";
+pub const OVERLAY0: &str = "#3a3a50";
+pub const OVERLAY1: &str = "#50506a";
+pub const TEXT: &str = "#d8d8e8";
+pub const SUBTEXT0: &str = "#7878a0";
+pub const SUBTEXT1: &str = "#9898b8";
+pub const LAVENDER: &str = "#b8b8f0";
+pub const BLUE: &str = "#6888f0";
+pub const SAPPHIRE: &str = "#58a0e8";
+pub const SKY: &str = "#60c8e0";
+pub const TEAL: &str = "#60d8b8";
+pub const GREEN: &str = "#68e880";
+pub const YELLOW: &str = "#e8d878";
+pub const PEACH: &str = "#e8a060";
+pub const MAROON: &str = "#e08080";
+pub const RED: &str = "#f06080";
+pub const MAUVE: &str = "#b090f0";
+pub const PINK: &str = "#e0a0d0";
+pub const FLAMINGO: &str = "#d8c8c8";
+pub const ROSEWATER: &str = "#e0c8c0";
+
+// Gradient helper - blends between two hex colors
+pub fn blend(c1: &str, c2: &str, t: f32) -> ratatui::style::Color {
+    let (r1, g1, b1) = hex_to_rgb(c1);
+    let (r2, g2, b2) = hex_to_rgb(c2);
+    let r = (r1 as f32 + (r2 as f32 - r1 as f32) * t) as u8;
+    let g = (g1 as f32 + (g2 as f32 - g1 as f32) * t) as u8;
+    let b = (b1 as f32 + (b2 as f32 - b1 as f32) * t) as u8;
+    ratatui::style::Color::Rgb(r, g, b)
+}
 
 pub fn hex_to_rgb(hex: &str) -> (u8, u8, u8) {
     let hex = hex.trim_start_matches('#');
@@ -52,4 +62,11 @@ pub fn dim(hex: &str) -> ratatui::style::Style {
     ratatui::style::Style::default()
         .fg(color(hex))
         .add_modifier(ratatui::style::Modifier::DIM)
+}
+
+pub fn bold_bg(fg: &str, bg: &str) -> ratatui::style::Style {
+    ratatui::style::Style::default()
+        .fg(color(fg))
+        .bg(color(bg))
+        .add_modifier(ratatui::style::Modifier::BOLD)
 }

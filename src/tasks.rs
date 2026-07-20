@@ -221,6 +221,46 @@ fn services_config() -> Category {
     }
 }
 
+fn pipx_apps() -> Category {
+    Category {
+        name: "Pipx Apps".into(),
+        icon: ">".into(),
+        tasks: vec![
+            Task::new("Install pipx", "Python app installer",
+                vec!["sudo pacman -S --needed --noconfirm python-pipx || pip install pipx && pipx ensurepath"]),
+            Task::new("Ranger", "Terminal file manager",
+                vec!["pipx install ranger-fm"]),
+            Task::new("Tavily CLI", "AI search tool",
+                vec!["pipx install tavily-cli || true"]),
+            Task::new("Glance", "RSS/news reader",
+                vec!["pipx install glance || true"]),
+            Task::new("Httpie", "HTTP client",
+                vec!["pipx install httpie"]),
+            Task::new("Bpytop", "Resource monitor",
+                vec!["pipx install bpytop"]),
+        ],
+    }
+}
+
+fn kde_install() -> Category {
+    Category {
+        name: "KDE Plasma".into(),
+        icon: ">".into(),
+        tasks: vec![
+            Task::new("Plasma Desktop", "Full KDE Plasma desktop environment",
+                vec!["sudo pacman -S --needed --noconfirm plasma plasma-wayland-session kde-gtk-config breeze-gtk sddm"]),
+            Task::new("KDE Apps", "dolphin, konsole, kate, ark, spectacle, okular",
+                vec!["sudo pacman -S --needed --noconfirm dolphin konsole kate ark spectacle okular gwenview kcalc"]),
+            Task::new("KDE Extras", "Widgets, themes, system settings",
+                vec!["sudo pacman -S --needed --noconfirm plasma-nvidia powerdevil bluedevil kinfocenter partitionmanager"]),
+            Task::new("Display manager", "Enable SDDM login screen",
+                vec!["sudo systemctl enable sddm"]),
+            Task::new("Wayland session", "Enable Plasma Wayland",
+                vec!["sudo ln -sf /usr/share/wayland-sessions/plasma-wayland.desktop /usr/share/wayland-sessions/default-wayland.desktop || true"]),
+        ],
+    }
+}
+
 fn wallpapers_config() -> Category {
     Category {
         name: "Wallpapers".into(),
@@ -242,5 +282,7 @@ pub fn all_categories() -> Vec<Category> {
         desktop_config(),
         services_config(),
         wallpapers_config(),
+        pipx_apps(),
+        kde_install(),
     ]
 }

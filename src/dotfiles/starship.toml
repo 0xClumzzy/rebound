@@ -1,0 +1,87 @@
+palette = "catppuccin_mocha"
+
+[palettes.catppuccin_mocha]
+rosewater = "#f5e0dc"
+flamingo  = "#f2cdcd"
+mauve     = "#cba6f7"
+red       = "#f38ba8"
+peach     = "#fab387"
+yellow    = "#f9e2af"
+green     = "#a6e3a1"
+blue      = "#89b4fa"
+text      = "#cdd6f4"
+surface1  = "#45475a"
+base      = "#1e1e2e"
+
+format = '[](mauve)[$user](bg:mauve fg:base)[](fg:mauve bg:blue)[ $path](bg:blue fg:base)[](fg:blue bg:surface1)$git_branch$git_status[](fg:surface1)$python$nodejs$rust$cmd_duration\n\n[❯](bold green) '
+right_format = '$memory_usage[ @ ](surface1)$time'
+
+[username]
+show_always = true
+format = "[$user](bg:mauve fg:base bold)"
+style_user = "bg:mauve fg:base italic"
+style_root = "bg:red fg:base bold"
+
+[directory]
+format = "[ $path ]($style)"
+style = "bg:blue fg:base bold"
+truncation_length = 3
+truncate_to_repo = true
+read_only = "󰌾 "
+home_symbol = "~"
+
+[git_branch]
+format = "[](fg:surface1 bg:base)[ $symbol$branch ]($style)[](fg:base)"
+style = "bg:base fg:mauve bold"
+symbol = " "
+
+[git_status]
+format = "([$all_status$ahead_behind]($style) )"
+style = "bold red"
+conflicted = "󰦎 "
+ahead = "⇡${count} "
+behind = "⇣${count} "
+diverged = "⇕⇡${ahead_count}⇣${behind_count} "
+untracked = "󰋗 "
+stashed = "󰏖 "
+modified = "󰝤 "
+staged = "[+${count}](green) "
+deleted = "󰍶 "
+
+[cmd_duration]
+min_time = 500
+format = " [󱎫 $duration]($style)"
+style = "bold yellow"
+show_notifications = true
+
+[nodejs]
+format = "[ $symbol$version ]($style)"
+style = "bold green"
+symbol = " "
+
+[python]
+format = "[ $symbol$version ]($style)"
+style = "bold peach"
+symbol = " "
+
+[rust]
+format = "[ $symbol$version ]($style)"
+style = "bold red"
+symbol = " "
+
+[memory_usage]
+disabled = false
+threshold = 75
+format = "[󰍛 $ram]($style) "
+style = "bold red"
+
+[time]
+disabled = false
+format = "[$time]($style)"
+style = "bold text"
+time_format = "%H:%M:%S"
+
+[character]
+success_symbol = "\n[❯](bold green)"
+error_symbol = "\n[❯](bold red)"
+vimcmd_symbol = "[❮](bold mauve)"

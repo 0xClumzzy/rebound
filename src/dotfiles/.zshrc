@@ -237,11 +237,11 @@ alias src='source ~/.zshrc'
 alias hosts='micro /etc/hosts'
 
 # --- Personal scripts ---
-alias ass='bash $HOME/scripts/bashs/asm2.sh'
-alias ms='bash $HOME/scripts/bashs/combo.sh'
-alias vpn='bash $HOME/scripts/bashs/vpnc.sh'
-alias rs='bash $HOME/scripts/bashs/rustscan.sh'
-alias gs='bash $HOME/scripts/bashs/gobuster.sh'
+alias ass='bash $HOME/scripts/BASH/asm2.sh'
+alias ms='bash $HOME/scripts/BASH/combo.sh'
+alias vpn='bash $HOME/scripts/BASH/vpnc.sh'
+alias rs='bash $HOME/scripts/BASH/rustscan.sh'
+alias gs='bash $HOME/scripts/BASH/gobuster.sh'
 
 # --- systemctl shortcuts ---
 alias status='sudo systemctl status'
@@ -271,8 +271,8 @@ alias delete='rm -rf dookie'
 
 # --- SSH / CTF ---
 alias pwnc='cd .k3ys && ssh -i key hacker@dojo.pwn.college'
-alias hmv='bash $HOME/scripts/bashs/hmv.sh'
-alias hmvc='bash $HOME/scripts/bashs/hmvc.sh'
+alias hmv='bash $HOME/scripts/BASH/hmv.sh'
+alias hmvc='bash $HOME/scripts/BASH/hmvc.sh'
 
 # =============================================================================
 # FUNCTIONS (ported from ~/.bashrc)

@@ -1,12 +1,9 @@
-# ~/.zshrc — powered by oh-my-zsh + starship
-
 export ZSH="$HOME/.oh-my-zsh"
 
 ZSH_THEME=""
 
 plugins=(
   git
-  zsh-autosuggestions
   zsh-syntax-highlighting
 )
 
@@ -42,16 +39,6 @@ path_add_first \
 
 # --- Starship prompt ---
 eval "$(starship init zsh)"
-
-# --- Zoxide ---
-if command -v zoxide &>/dev/null; then
-  eval "$(zoxide init zsh)"
-fi
-
-# --- thefuck ---
-if command -v thefuck &>/dev/null; then
-  eval "$(thefuck --alias)"
-fi
 
 # --- History ---
 HISTSIZE=50000
@@ -90,8 +77,8 @@ if command -v nvim &>/dev/null; then
   export EDITOR="nvim"
   export VISUAL="nvim"
 elif command -v micro &>/dev/null; then
-  export EDITOR="micro"
-  export VISUAL="micro"
+  export EDITOR="vim"
+  export VISUAL="vim"
 fi
 
 # =============================================================================
@@ -231,7 +218,7 @@ alias r='reboot'
 alias fucking='sudo'
 
 # --- Edit config ---
-alias e='micro ~/.zshrc'
+alias e='vim ~/.zshrc'
 alias zshrc='micro ~/.zshrc'
 alias src='source ~/.zshrc'
 alias hosts='micro /etc/hosts'
@@ -241,7 +228,7 @@ alias ass='bash $HOME/scripts/BASH/asm2.sh'
 alias ms='bash $HOME/scripts/BASH/combo.sh'
 alias vpn='bash $HOME/scripts/BASH/vpnc.sh'
 alias rs='bash $HOME/scripts/BASH/rustscan.sh'
-alias gs='bash $HOME/scripts/BASH/gobuster.sh'
+alias gs='bash $HOME/scripts/BSAH/gobuster.sh'
 
 # --- systemctl shortcuts ---
 alias status='sudo systemctl status'
@@ -698,23 +685,4 @@ cd() {
   builtin cd "$@" && ls
 }
 
-# --- fastfetch on terminal open ---
-if command -v fastfetch &>/dev/null; then
-  fastfetch
-fi
-
-# +---------------------------------------------------------------+
-# |                _ __ ___  ___| |__   ___| | |                  |
-# |               | '__/ _ \/ __| '_ \ / _ \ | |                  |
-# |               | | |  __/\__ \ | | |  __/ | |                  |
-# |               |_|  \___||___/_| |_|\___|_|_|                  |
-# |                                                               |
-# |       WARNING: THIS BLOCK IS AUTOMATICALLY MANAGED BY RESHELL. |
-# |       DO NOT MANUALLY UPDATE OR EDIT THE CODE WITHIN IT.      |
-# +---------------------------------------------------------------+
-# >>> reshell initialize >>>
-if [ -f "/home/clumzzy/.config/reshell/shell/reshell.sh" ]; then
-    . "/home/clumzzy/.config/reshell/shell/reshell.sh"
-fi
-# <<< reshell initialize <<<
-export PATH="$HOME/scripts/bashs:$PATH"
+export PATH="$HOME/scripts/BASH:$PATH"

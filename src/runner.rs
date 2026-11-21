@@ -39,13 +39,14 @@ impl Runner {
         }
     }
 
-    pub fn run_all(&self, tasks: &[(&crate::tasks::Category, &Task)], home: &str) {
+    pub fn run_all(&self, tasks: &[(&crate::tasks::Category, &Task)], home: &str, dry_run: bool) {
         *self.state.lock().unwrap() = RunState::Running;
         *self.tick.lock().unwrap() = 0;
         *self.output.lock().unwrap() = vec![
             "----".repeat(12),
             "  rebound".to_string(),
             "  Clumzzy's Arch Linux Environment".to_string(),
+            if dry_run { "  DRY RUN MODE".to_string() } else { "".to_string() },
             "----".repeat(12),
             "".to_string(),
             format!("  {} tasks selected", tasks.len()),
@@ -96,15 +97,20 @@ impl Runner {
 
                 // Handle wallpapers deployment
                 if *is_wallpapers {
-                    let results = crate::wallpapers::deploy_all(&home);
-                    for result in results {
+                    if dry_run {
                         let mut out = output.lock().unwrap();
-                        match result {
-                            Ok(msg) => out.push(format!("  [ok] {}", msg)),
-                            Err(msg) => {
-                                out.push(format!("  [!!] {}", msg));
-                                *success.lock().unwrap() = false;
-                                failed.lock().unwrap().push(name.clone());
+                        out.push("  [dry-run] would deploy 34 wallpapers to ~/Pictures/wallpapers/".to_string());
+                    } else {
+                        let results = crate::wallpapers::deploy_all(&home);
+                        for result in results {
+                            let mut out = output.lock().unwrap();
+                            match result {
+                                Ok(msg) => out.push(format!("  [ok] {}", msg)),
+                                Err(msg) => {
+                                    out.push(format!("  [!!] {}", msg));
+                                    *success.lock().unwrap() = false;
+                                    failed.lock().unwrap().push(name.clone());
+                                }
                             }
                         }
                     }
@@ -116,20 +122,25 @@ impl Runner {
                 // Deploy embedded files first
                 if *has_deploy {
                     for (rel_path, content) in deploy_files {
-                        let path = std::path::PathBuf::from(&home).join(rel_path);
-                        if let Some(parent) = path.parent() {
-                            let _ = std::fs::create_dir_all(parent);
-                        }
-                        match std::fs::write(&path, content) {
-                            Ok(()) => {
-                                let mut out = output.lock().unwrap();
-                                out.push(format!("  [ok] deployed ~{}", rel_path));
+                        if dry_run {
+                            let mut out = output.lock().unwrap();
+                            out.push(format!("  [dry-run] would deploy ~{}", rel_path));
+                        } else {
+                            let path = std::path::PathBuf::from(&home).join(rel_path);
+                            if let Some(parent) = path.parent() {
+                                let _ = std::fs::create_dir_all(parent);
                             }
-                            Err(e) => {
-                                let mut out = output.lock().unwrap();
-                                out.push(format!("  [!!] failed ~{}: {}", rel_path, e));
-                                *success.lock().unwrap() = false;
-                                failed.lock().unwrap().push(name.clone());
+                            match std::fs::write(&path, content) {
+                                Ok(()) => {
+                                    let mut out = output.lock().unwrap();
+                                    out.push(format!("  [ok] deployed ~{}", rel_path));
+                                }
+                                Err(e) => {
+                                    let mut out = output.lock().unwrap();
+                                    out.push(format!("  [!!] failed ~{}: {}", rel_path, e));
+                                    *success.lock().unwrap() = false;
+                                    failed.lock().unwrap().push(name.clone());
+                                }
                             }
                         }
                     }
@@ -153,7 +164,15 @@ impl Runner {
 
                     {
                         let mut out = output.lock().unwrap();
-                        out.push(format!("  \u{251c}\u{2500} $ {}", cmd));
+                        let prefix = if dry_run { "[dry-run] " } else { "" };
+                        out.push(format!("  \u{251c}\u{2500} {}${}", prefix, cmd));
+                    }
+
+                    if dry_run {
+                        progress += 1;
+                        *current.lock().unwrap() = progress;
+                        *last_progress.lock().unwrap() = Instant::now();
+                        continue;
                     }
 
                     let result = Command::new("sh")

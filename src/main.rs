@@ -40,6 +40,9 @@ struct App {
     task_index: usize,
     runner: Runner,
     auto_mode: bool,
+    filter: String,
+    filter_mode: bool,
+    dry_run_mode: bool,
 }
 
 impl App {
@@ -51,11 +54,67 @@ impl App {
             task_index: 0,
             runner: Runner::new(),
             auto_mode: auto,
+            filter: String::new(),
+            filter_mode: false,
+            dry_run_mode: false,
         }
     }
 
-    fn current_tasks(&self) -> &[Task] {
-        &self.categories[self.cat_index].tasks
+    fn current_tasks(&self) -> Vec<&Task> {
+        if self.filter.is_empty() {
+            self.categories[self.cat_index].tasks.iter().collect()
+        } else {
+            self.categories[self.cat_index]
+                .tasks
+                .iter()
+                .filter(|t| {
+                    t.name.to_lowercase().contains(&self.filter.to_lowercase())
+                        || t.desc.to_lowercase().contains(&self.filter.to_lowercase())
+                })
+                .collect()
+        }
+    }
+
+    fn filtered_task_count(&self) -> usize {
+        self.current_tasks().len()
+    }
+
+    fn toggle_task(&mut self) {
+        let (target_name, target_desc) = {
+            let filtered = self.current_tasks();
+            if let Some(task) = filtered.get(self.task_index) {
+                (task.name.clone(), task.desc.clone())
+            } else {
+                return;
+            }
+        };
+        for cat_task in &mut self.categories[self.cat_index].tasks {
+            if cat_task.name == target_name && cat_task.desc == target_desc {
+                cat_task.selected = !cat_task.selected;
+                break;
+            }
+        }
+    }
+
+    fn start_filter(&mut self) {
+        self.filter_mode = true;
+        self.filter.clear();
+    }
+
+    fn exit_filter(&mut self) {
+        self.filter_mode = false;
+        self.filter.clear();
+        self.task_index = 0;
+    }
+
+    fn update_filter(&mut self, c: char) {
+        self.filter.push(c);
+        self.task_index = 0;
+    }
+
+    fn backspace_filter(&mut self) {
+        self.filter.pop();
+        self.task_index = 0;
     }
 
     fn all_selected_tasks(&self) -> Vec<(&Category, &Task)> {
@@ -82,13 +141,6 @@ impl App {
         self.categories.iter().flat_map(|c| &c.tasks).filter(|t| t.selected).count()
     }
 
-    fn toggle_task(&mut self) {
-        let tasks = &mut self.categories[self.cat_index].tasks;
-        if let Some(task) = tasks.get_mut(self.task_index) {
-            task.selected = !task.selected;
-        }
-    }
-
     fn toggle_all(&mut self) {
         let all_sel = self.categories[self.cat_index].tasks.iter().all(|t| t.selected);
         for task in &mut self.categories[self.cat_index].tasks {
@@ -107,13 +159,14 @@ impl App {
     fn start_auto(&mut self) {
         self.select_all();
         self.state = AppState::Running;
-        self.runner.run_all(&self.all_selected_tasks(), &self.home());
+        self.runner.run_all(&self.all_selected_tasks(), &self.home(), self.dry_run_mode);
     }
 }
 
 fn main() -> anyhow::Result<()> {
     let args: Vec<String> = std::env::args().collect();
     let auto = args.contains(&"--auto".to_string()) || args.contains(&"-a".to_string());
+    let dry_run = args.contains(&"--dry-run".to_string()) || args.contains(&"-d".to_string());
 
     if args.contains(&"--help".to_string()) || args.contains(&"-h".to_string()) {
         println!("rebound - 0xClumzZy's Arch Linux Environment Setup");
@@ -121,10 +174,38 @@ fn main() -> anyhow::Result<()> {
         println!("USAGE:");
         println!("  rebound           Interactive TUI");
         println!("  rebound --auto    Auto-install everything (no TUI)");
+        println!("  rebound --dry-run Show what would be installed without running");
         println!();
         println!("OPTIONS:");
-        println!("  -a, --auto    Select all tasks and run immediately");
-        println!("  -h, --help    Show this help message");
+        println!("  -a, --auto      Select all tasks and run immediately");
+        println!("  -d, --dry-run   Show commands that would be executed without running them");
+        println!("  -h, --help      Show this help message");
+        return Ok(());
+    }
+
+    if dry_run {
+        println!("=== DRY RUN MODE ===");
+        println!("Commands that would be executed:");
+        println!();
+        let categories = tasks::all_categories();
+        for cat in &categories {
+            println!("{} {}", cat.icon, cat.name);
+            for task in &cat.tasks {
+                println!("  • {}", task.name);
+                for cmd in &task.commands {
+                    println!("    $ {}", cmd);
+                }
+                if !task.deploy_files.is_empty() {
+                    for (path, _) in &task.deploy_files {
+                        println!("    > deploy ~{}", path);
+                    }
+                }
+                if task.is_wallpapers {
+                    println!("    > deploy 34 wallpapers to ~/Pictures/wallpapers/");
+                }
+            }
+            println!();
+        }
         return Ok(());
     }
 
@@ -195,33 +276,56 @@ where
                     },
                     AppState::SelectTasks => match key.code {
                         KeyCode::Char('q') | KeyCode::Esc => {
-                            app.state = AppState::SelectCategory;
+                            if app.filter_mode {
+                                app.exit_filter();
+                            } else {
+                                app.state = AppState::SelectCategory;
+                            }
+                        }
+                        KeyCode::Char('/') => {
+                            if !app.filter_mode {
+                                app.start_filter();
+                            }
+                        }
+                        KeyCode::Enter => {
+                            if app.filter_mode {
+                                app.exit_filter();
+                            } else if app.has_selection() {
+                                app.state = AppState::Running;
+                                app.runner.run_all(&app.all_selected_tasks(), &app.home(), app.dry_run_mode);
+                            }
+                        }
+                        KeyCode::Backspace => {
+                            if app.filter_mode {
+                                app.backspace_filter();
+                            } else {
+                                for task in &mut app.categories[app.cat_index].tasks {
+                                    task.selected = false;
+                                }
+                            }
                         }
                         KeyCode::Up | KeyCode::Char('k') => {
                             app.task_index = app.task_index.saturating_sub(1);
                         }
                         KeyCode::Down | KeyCode::Char('j') => {
-                            let len = app.current_tasks().len();
+                            let len = app.filtered_task_count();
                             if len > 0 && app.task_index < len - 1 {
                                 app.task_index += 1;
                             }
                         }
                         KeyCode::Char(' ') => {
                             app.toggle_task();
-                            if app.task_index < app.current_tasks().len() - 1 {
+                            if app.task_index < app.filtered_task_count() - 1 {
                                 app.task_index += 1;
                             }
                         }
-                        KeyCode::Char('a') => app.toggle_all(),
-                        KeyCode::Enter => {
-                            if app.has_selection() {
-                                app.state = AppState::Running;
-                                app.runner.run_all(&app.all_selected_tasks(), &app.home());
-                            }
+                        KeyCode::Char('d') => {
+                            app.dry_run_mode = !app.dry_run_mode;
                         }
-                        KeyCode::Backspace => {
-                            for task in &mut app.categories[app.cat_index].tasks {
-                                task.selected = false;
+                        KeyCode::Char('a') => app.toggle_all(),
+                        KeyCode::Char(c) => {
+                            if app.filter_mode {
+                                app.update_filter(c);
                             }
                         }
                         _ => {}
@@ -646,10 +750,11 @@ fn render_categories(f: &mut Frame, app: &App) {
 
 fn render_tasks(f: &mut Frame, app: &App) {
     let area = f.area();
+    let header_h = if app.filter_mode { 7 } else { 5 };
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(5),
+            Constraint::Length(header_h),
             Constraint::Min(8),
             Constraint::Length(3),
         ])
@@ -657,12 +762,18 @@ fn render_tasks(f: &mut Frame, app: &App) {
 
     let cat = &app.categories[app.cat_index];
     let sel = cat.tasks.iter().filter(|t| t.selected).count();
+    let filtered_tasks = app.current_tasks();
+    let total_filtered = filtered_tasks.len();
 
-    let header_lines = vec![
+    let mut header_lines = vec![
         Line::from(vec![
             Span::styled(format!("  {} ", cat.icon), Style::default()),
             Span::styled(&cat.name, theme::bold(theme::MAUVE)),
             Span::styled(format!("  \u{2502}  {}/{} selected", sel, cat.tasks.len()), theme::dim(theme::SUBTEXT0)),
+            Span::styled(
+                if app.dry_run_mode { "  \u{2502}  DRY-RUN " } else { "" },
+                if app.dry_run_mode { theme::bold(theme::YELLOW) } else { theme::style(theme::SURFACE2) }
+            ),
         ]),
         Line::from(""),
         Line::from(vec![
@@ -679,23 +790,37 @@ fn render_tasks(f: &mut Frame, app: &App) {
             Span::styled("\u{232b}", theme::bold(theme::RED)),
             Span::styled(" clear ", theme::dim(theme::OVERLAY0)),
             Span::styled("  ", Style::default()),
+            Span::styled("/", theme::bold(theme::MAUVE)),
+            Span::styled(" filter ", theme::dim(theme::OVERLAY0)),
+            Span::styled("  ", Style::default()),
+            Span::styled("d", theme::bold(theme::YELLOW)),
+            Span::styled(" dry-run ", theme::dim(theme::OVERLAY0)),
+            Span::styled("  ", Style::default()),
             Span::styled("esc", theme::bold(theme::PEACH)),
             Span::styled(" back", theme::dim(theme::OVERLAY0)),
         ]),
     ];
+
+    if app.filter_mode {
+        header_lines.insert(2, Line::from(""));
+        header_lines.insert(3, Line::from(vec![
+            Span::styled("  \u{2502} ", theme::bold(theme::BLUE)),
+            Span::styled(&app.filter, theme::bold(theme::TEXT)),
+            Span::styled("_", theme::bold(theme::BLUE)),
+        ]));
+    }
 
     let header = Paragraph::new(header_lines)
         .block(
             Block::default()
                 .borders(Borders::ALL)
                 .border_type(ratatui::widgets::BorderType::Rounded)
-                .border_style(border_accent(theme::MAUVE))
+                .border_style(if app.filter_mode { border_accent(theme::BLUE) } else { border_accent(theme::MAUVE) })
                 .style(Style::default().bg(theme::color(theme::CRUST)))
         );
     f.render_widget(header, chunks[0]);
 
-    let items: Vec<ListItem> = cat
-        .tasks
+    let items: Vec<ListItem> = filtered_tasks
         .iter()
         .enumerate()
         .map(|(i, task)| {
@@ -753,7 +878,16 @@ fn render_tasks(f: &mut Frame, app: &App) {
     f.render_stateful_widget(list, chunks[1], &mut state);
 
     let total = app.total_selected();
-    let footer_text = if total > 0 {
+    let _total_filtered = filtered_tasks.len();
+    let footer_text = if app.filter_mode {
+        vec![
+            Span::styled("  ", Style::default()),
+            Span::styled(format!("{} matches", total_filtered), theme::bold(theme::YELLOW)),
+            Span::styled("  ", Style::default()),
+            Span::styled("esc", theme::bold(theme::PEACH)),
+            Span::styled(" clear filter", theme::dim(theme::OVERLAY0)),
+        ]
+    } else if total > 0 {
         vec![
             Span::styled("  ", Style::default()),
             Span::styled(format!("{}", total), theme::bold(theme::GREEN)),
@@ -770,7 +904,9 @@ fn render_tasks(f: &mut Frame, app: &App) {
             Span::styled("  ", Style::default()),
             Span::styled("press ", theme::dim(theme::OVERLAY0)),
             Span::styled("\u{2423}", theme::bold(theme::BLUE)),
-            Span::styled(" to select a task", theme::dim(theme::OVERLAY0)),
+            Span::styled(" to select a task  ", theme::dim(theme::OVERLAY0)),
+            Span::styled("/", theme::bold(theme::MAUVE)),
+            Span::styled(" to filter", theme::dim(theme::OVERLAY0)),
         ]
     };
 

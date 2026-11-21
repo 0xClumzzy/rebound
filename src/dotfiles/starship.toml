@@ -1,133 +1,268 @@
+"$schema" = "https://starship.rs/config-schema.json"
+
+# ─── Noctalia Palette (Refined Monochrome) ─────────
 palette = "noctalia"
 command_timeout = 2000
+scan_timeout = 30
+add_newline = false
 
+# Two-line prompt with rounded powerline separators
 format = """
-[┌─[](fg:dim)[$user](fg:bright bold)[](fg:dim)─[](fg:dim)[ $path ](fg:mid)[](fg:dim)$git_branch$git_status](fg:dim)$python$nodejs$rust$cmd_duration
-[└─](fg:dim)[0x❯](fg:bright bold) """
+[┌─](fg:accent)$username$sudo$hostname$directory$status$jobs$cmd_duration$fill
+[└─](fg:dim)$character"""
 
-right_format = '$memory_usage$time'
+right_format = "$time"
+continuation_prompt = "[└─](fg:dim)"
 
-# ── User ──────────────────────────────────────
+[fill]
+symbol = "─"
+style = "fg:dim"
+
+# ─── Palette: Noctalia ─────────────────────────────
+[palettes.noctalia]
+# Core grays — stepped contrast
+bright    = "#e8e8e8"
+mid       = "#9a9a9a"
+dim       = "#4a4a4a"
+accent    = "#ffffff"
+
+# Surface blacks — depth layers
+base      = "#0a0a0a"
+surface0  = "#0d0d0d"
+surface1  = "#141414"
+surface2  = "#1a1a1a"
+mantle    = "#0d0d0d"
+crust     = "#0a0a0a"
+
+# Semantic aliases (mapped to grays)
+blue      = "#b8b8b8"
+red       = "#ffffff"
+green     = "#d0d0d0"
+yellow    = "#b8b8b8"
+cyan      = "#d0d0d0"
+magenta   = "#ffffff"
+white     = "#9a9a9a"
+black     = "#141414"
+rosewater = "#b8b8b8"
+flamingo  = "#ffffff"
+pink      = "#ffffff"
+mauve     = "#ffffff"
+maroon    = "#ffffff"
+peach     = "#b8b8b8"
+teal      = "#d0d0d0"
+sky       = "#d0d0d0"
+sapphire  = "#b8b8b8"
+lavender  = "#ffffff"
+text      = "#9a9a9a"
+subtext1  = "#9a9a9a"
+subtext0  = "#4a4a4a"
+overlay2  = "#4a4a4a"
+overlay1  = "#4a4a4a"
+overlay0  = "#141414"
+
+# ─── Username ──────────────────────────────────────
 [username]
 show_always = true
-format = "[$user]($style)"
+format = "[](fg:dim)[󰣇 $user]($style)[▸](fg:dim) "
 style_user = "fg:bright bold"
 style_root = "fg:accent bold"
 
-# ── Directory ─────────────────────────────────
+# ─── Hostname (SSH only) ───────────────────────────
+[hostname]
+ssh_only = true
+format = "[](fg:dim)[$ssh_symbol$hostname]($style)[▸](fg:dim) "
+ssh_symbol = "@"
+style = "fg:mid"
+
+# ─── Sudo Cache ────────────────────────────────────
+[sudo]
+disabled = false
+format = "[](fg:dim)[sudo]($style)[▸](fg:dim) "
+style = "fg:accent bold"
+
+# ─── Directory ─────────────────────────────────────
 [directory]
-format = "[ $path]($style)"
-style = "fg:mid bold"
+format = "[](fg:dim)[󰉋 $path]($style)[$read_only]($read_only_style)[▸](fg:dim) "
+style = "fg:bright bold"
 truncation_length = 3
+truncation_symbol = "…/"
 truncate_to_repo = true
-read_only = " ro"
+read_only = "🔒"
+read_only_style = "fg:accent"
 home_symbol = "~"
 
-# ── Git ───────────────────────────────────────
+# ─── Git Branch ────────────────────────────────────
 [git_branch]
-format = "─[](fg:dim)[@$branch]($style)[](fg:dim)"
+format = "[](fg:dim)[󰁹 $branch]($style)[▸](fg:dim) "
 style = "fg:mid"
 symbol = ""
 
-[git_status]
-format = "[$all_status$ahead_behind]($style) "
+# ─── Git State (rebase/merge/cherry-pick) ──────────
+[git_state]
+format = "[](fg:dim)[$state]($style)[▸](fg:dim) "
 style = "fg:accent bold"
-conflicted = "!!"
-ahead = "↑${count}"
-behind = "↓${count}"
-diverged = "↕${ahead_count}↓${behind_count}"
+
+# ─── Git Status ────────────────────────────────────
+[git_status]
+format = "[](fg:dim)[$all_status$ahead_behind]($style)[▸](fg:dim) "
+style = "fg:accent"
+conflicted = "✖"
+ahead = "↑"
+behind = "↓"
+diverged = "↕"
 untracked = "?"
 stashed = "≡"
-modified = "~"
-staged = "+${count}"
-deleted = "-"
+modified = "✎"
+staged = "+"
+deleted = "−"
+renamed = "→"
+typechanged = "~"
 
-# ── Runtimes ──────────────────────────────────
-[nodejs]
-format = " [node:$version]($style)"
-style = "fg:dim"
-symbol = ""
-
-[python]
-format = " [py:$version]($style)"
-style = "fg:dim"
-symbol = ""
-
-[rust]
-format = " [rs:$version]($style)"
-style = "fg:dim"
-symbol = ""
-
-# ── Cmd duration ──────────────────────────────
-[cmd_duration]
-min_time = 9000
-format = " [took $duration]($style)"
-style = "fg:mid"
-show_notifications = true
-
-# ── Memory prompt ──────────────────────────────
-[memory_usage]
+# ─── Exit Code ─────────────────────────────────────
+[status]
 disabled = false
-threshold = 75
-format = "[mem:$ram]($style) "
+format = "[](fg:dim)[$symbol]($style)[▸](fg:dim) "
+symbol = "✗"
+success_symbol = ""
 style = "fg:accent bold"
 
+# ─── Background Jobs ───────────────────────────────
+[jobs]
+format = "[](fg:dim)[⚙ $number]($style)[▸](fg:dim) "
+symbol = ""
+style = "fg:mid"
+symbol_threshold = 1
+number_threshold = 2
+
+# ─── Runtime Versions ──────────────────────────────
+[nodejs]
+format = "[](fg:dim)[⬢ $version]($style)[▸](fg:dim) "
+style = "fg:mid"
+symbol = ""
+version_format = "v${major}"
+
+[python]
+disabled = true
+format = '[󰣇 ($virtualenv) ]($style)[▸](fg:dim) '
+style = "fg:mid"
+symbol = ""
+version_format = "${major}.${minor}"
+
+[rust]
+format = "[](fg:dim)[🦀 $version]($style)[▸](fg:dim) "
+style = "fg:mid"
+symbol = ""
+version_format = "v${major}.${minor}"
+
+[golang]
+format = "[](fg:dim)[🐹 $version]($style)[▸](fg:dim) "
+style = "fg:mid"
+symbol = ""
+version_format = "${major}.${minor}"
+
+# Disabled by default — enable per-project via starship.toml in repo
+[c]
+disabled = true
+[cpp]
+disabled = true
+[java]
+disabled = true
+[ruby]
+disabled = true
+[php]
+disabled = true
+
+# ─── Environment Context ───────────────────────────
+[conda]
+disabled = true
+format = "[](fg:dim)[🅒 $environment]($style)[▸](fg:dim) "
+style = "fg:mid"
+symbol = ""
+
+[nix_shell]
+format = "[](fg:dim)[❄ $state]($style)[▸](fg:dim) "
+style = "fg:mid"
+symbol = ""
+
+[direnv]
+disabled = false
+format = "[](fg:dim)[⎇]($style)[▸](fg:dim) "
+style = "fg:mid"
+symbol = ""
+
+[docker_context]
+format = "[](fg:dim)[🐳 $context]($style)[▸](fg:dim) "
+style = "fg:mid"
+symbol = ""
+
+[container]
+format = "[](fg:dim)[📦 $name]($style)[▸](fg:dim) "
+style = "fg:accent"
+symbol = ""
+
+[kubernetes]
+disabled = true
+format = "[](fg:dim)[☸ $context]($style)[▸](fg:dim) "
+style = "fg:mid"
+symbol = ""
+
+[aws]
+disabled = true
+[gcloud]
+disabled = true
+[azure]
+disabled = true
+
+# ─── Battery ───────────────────────────────────────
+[battery]
+disabled = false
+format = "[](fg:dim)[$symbol$percentage]($style)[▸](fg:dim) "
+full_symbol = "󰁹"
+charging_symbol = "󰂄"
+discharging_symbol = "󰁿"
+unknown_symbol = "󰂑"
+empty_symbol = "󰂃"
+
+[[battery.display]]
+threshold = 15
+style = "fg:accent bold"
+
+# ─── Command Duration ──────────────────────────────
+[cmd_duration]
+min_time = 2000
+format = "[](fg:dim)[⏱ $duration]($style)[▸](fg:dim) "
+style = "fg:dim"
+symbol = ""
+show_notifications = true
+min_time_to_notify = 30000
+
+# ─── Time (Right Side) ─────────────────────────────
 [time]
 disabled = false
-format = "[$time]($style)"
+format = "[󱎫 $time]($style)"
 style = "fg:dim"
-time_format = "%H:%M:%S"
+time_format = "%H:%M"
+time_range = "-"
 
-# ── Character ─────────────────────────────────
+# ─── Prompt Character ──────────────────────────────
 [character]
-success_symbol = "[0x❯](fg:bright bold)"
-error_symbol = "[0x❯](fg:accent bold)"
-vimcmd_symbol = "[0x❮](fg:mid bold)"
+format = "$symbol "
+success_symbol = "0x❯"
+error_symbol = "0x✗"
+vicmd_symbol = "0x❮"
+style_success = "fg:bright bold"
+style_failure = "fg:accent bold"
+style_vimcmd = "fg:mid bold"
 
-# ── localip: banned ───────────────────────────
+# ─── Disabled Modules ──────────────────────────────
 [localip]
 disabled = true
 
-# ──────────────────────────────────────────────
-#  NOCTALIA PALETTE (do not edit)
-# ──────────────────────────────────────────────
-[palettes.noctalia]
-# core grays
-bright    = "#e0e0e0"
-mid       = "#828282"
-dim       = "#3c3c3c"
-accent    = "#dddddd"
-
-# surface blacks
-base      = "#111111"
-surface0  = "#111111"
-surface1  = "#191919"
-surface2  = "#191919"
-mantle    = "#111111"
-crust     = "#111111"
-
-# catppuccin compat names (mapped to grays)
-blue      = "#a7a7a7"
-red       = "#dddddd"
-green     = "#cccccc"
-yellow    = "#aaaaaa"
-cyan      = "#cccccc"
-magenta   = "#dddddd"
-white     = "#828282"
-black     = "#191919"
-rosewater = "#aaaaaa"
-flamingo  = "#dddddd"
-pink      = "#dddddd"
-mauve     = "#dddddd"
-maroon    = "#dddddd"
-peach     = "#aaaaaa"
-teal      = "#cccccc"
-sky       = "#cccccc"
-sapphire  = "#a7a7a7"
-lavender  = "#dddddd"
-text      = "#828282"
-subtext1  = "#828282"
-subtext0  = "#3c3c3c"
-overlay2  = "#3c3c3c"
-overlay1  = "#3c3c3c"
-overlay0  = "#191919"
+# ─── Custom: Arch Distro ───────────────────────────
+[custom.arch]
+command = "cat /etc/os-release 2>/dev/null | grep -oP '(?<=^ID=).*' | head -1"
+when = "test -f /etc/os-release"
+format = "[](fg:dim)[🏗]($style)[▸](fg:dim) "
+style = "fg:dim"
+symbol = ""
+description = "Shows distro ID on Arch-based systems"
